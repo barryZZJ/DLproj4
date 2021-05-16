@@ -1,7 +1,10 @@
 import torch
 import os
-
+from dice import *
 from torch import nn
+
+config = {"learning_rate": 1e-3,
+          "epochs": 10}
 
 
 def train(model, device, train_loader, optimizer):
@@ -22,11 +25,12 @@ def train(model, device, train_loader, optimizer):
     print("Loss\t", loss_save)
 
 
-def test(model, device, test_loader):
+def test(model, device, test_loader, num_classes):
     model.to(device)
     model.eval()
     acc = loss = 0
     total = 0
+    dice_loss = 0
 
     criterion = nn.CrossEntropyLoss().to(device)
 
@@ -43,10 +47,28 @@ def test(model, device, test_loader):
             loss += loss.item() * labels.size(0)
             total += labels.size(0)
 
+            dice = SoftDiceLossV2(num_classes)
+            dice_loss += SoftDiceLossV2(y_pred, labels.long())
+
     acc /= total
     loss /= total
-    return acc, loss
-
+    dice /= total
+    return acc, loss, dice_loss
 
 
 if __name__ == "__main__":
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = None
+    # optimizer = torch.optim.SGD(model.parameters(), lr=0.1, momentum=0.9)
+    optimizer = torch.optim.Adam(model.parameters(),
+                                 lr=0.001,
+                                 betas=(0.9, 0.999),
+                                 eps=1e-08,
+                                 weight_decay=0,
+                                 amsgrad=False)
+
+    for epoch in range(config.get('epochs')):
+        pass
+
+
+
