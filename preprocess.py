@@ -102,6 +102,6 @@ if __name__ == '__main__':
 	time_start=time.time()
 	for i in range(131):
 		preprocess_state('liver_{}'.format(i))
-		print('总进度：{}%'.format(round(i/130*100,2))
+		print('总进度：{}%'.format(round(i/130*100,2)))
 	time_end=time.time()
 	print('totally cost (min):',(time_end-time_start)/60)
