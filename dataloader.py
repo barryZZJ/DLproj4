@@ -1,10 +1,9 @@
 import json
 
 import nibabel as nib
+import torch
 from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
-import imageio
-import matplotlib.pyplot as plt
 
 
 class DealDataset(Dataset):
@@ -13,28 +12,33 @@ class DealDataset(Dataset):
     """
 
     def __init__(self, type, transform=None):
-        datasetsPath = json.load(open("data/dataset.json"))["training"]
+        dataset_path = json.load(open("data/dataset.json"))["training"]
         self.transform = transform
-        dividePoint = int(len(datasetsPath) * 0.8)
+        divide_point = int(len(dataset_path) * 0.8)
+        # divide_point = 1
         if type == "train":
-            self.trainPath = datasetsPath[dividePoint:]
+            self.train_path = dataset_path[:divide_point]
         else:
-            self.trainPath = datasetsPath[:dividePoint]
+            self.train_path = dataset_path[:divide_point]
 
     def __getitem__(self, index):
-        imgPath = "data/" + self.trainPath[index]["image"]
-        imgPath = imgPath.replace("imagesTr", "imagesTr_Processed").replace(".nii.gz", "_Processed.nii.gz'")
+        img_path = "data/" + self.train_path[index]["image"]
+        img_path = img_path.replace("imagesTr", "imagesTr_Processed").replace(".nii.gz", "_Processed.nii.gz")
+        label_path = "data/" + self.train_path[index]["label"]
 
-        labelPath = "data/imagesTr_Processed/" + self.trainPath[index]["label"]
-        labelPath = labelPath.replace("imagesTr", "imagesTr_Processed").replace(".nii.gz", "_Processed.nii.gz'")
-        img = nib.load(imgPath).get_fdata()
-        label = nib.load(labelPath).get_fdata()
+        img = nib.load(img_path).get_fdata()
+        label = nib.load(label_path).get_fdata()
         if self.transform is not None:
             img = self.transform(img)
-        return img, label
+            label = self.transform(label)
+            width, height, queue = img.shape
+            padding = torch.zeros(990 - width, 512, 512)
+            img = torch.cat([img, padding], 0) / 300
+            label = torch.cat([label, padding], 0)
+        return img, label  # 990 * 512 * 512
 
     def __len__(self):
-        return len(self.trainPath)
+        return len(self.train_path)
 
 
 def load_data():
