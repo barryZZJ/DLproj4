@@ -25,7 +25,7 @@ class DealDataset(Dataset):
         img_path = "data/" + self.train_path[index]["image"]
         img_path = img_path.replace("imagesTr", "imagesTr_Processed").replace(".nii.gz", "_Processed.nii.gz")
         label_path = "data/" + self.train_path[index]["label"]
-
+        label_path = label_path.replace("labelsTr", "labelsTr_Processed").replace(".nii.gz", "_Labels_Processed.nii.gz")
         img = nib.load(img_path).get_fdata()
         label = nib.load(label_path).get_fdata()
         if self.transform is not None:
