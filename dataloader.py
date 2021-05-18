@@ -44,9 +44,8 @@ class DealDataset(Dataset):
 def load_data():
     train_dataset = DealDataset("train", transform=transforms.ToTensor())
     test_dataset = DealDataset("test", transform=transforms.ToTensor())
-
-    batchsize = 8
+    batch_size = 8
     # 载入数据集
-    train_loader = DataLoader(dataset=train_dataset, batch_size=batchsize, shuffle=True)
-    test_loader = DataLoader(dataset=test_dataset, batch_size=batchsize, shuffle=True)
+    train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
+    test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=True)
     return train_loader, test_loader

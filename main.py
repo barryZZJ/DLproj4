@@ -2,6 +2,7 @@ import torch
 import os
 from dice import *
 from torch import nn
+from dataloader import *
 
 config = {"learning_rate": 1e-3,
           "epochs": 10}
@@ -57,7 +58,11 @@ def test(model, device, test_loader, num_classes):
 
 
 if __name__ == "__main__":
+    # device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # load data
+    train_loader, test_loader = load_data()
+
     model = None
     # optimizer = torch.optim.SGD(model.parameters(), lr=0.1, momentum=0.9)
     optimizer = torch.optim.Adam(model.parameters(),
