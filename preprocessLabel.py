@@ -7,7 +7,7 @@ from nibabel.viewers import OrthoSlicer3D
 def preprocess_label(filename):
 	#读取文件
 	open_filename = 'data/labelsTr/'+ filename +'.nii.gz'
-	save_filename = 'data/labelsTr_Processed/'+ filename +'_Processed'+'.nii.gz'
+	save_filename = 'data/labelsTr_Processed/'+ filename +'_Labels_Processed'+'.nii.gz'
 	raw_img = nib.load(open_filename)
 	raw_img_fdata = raw_img.get_fdata()
 	data = np.transpose(raw_img_fdata, [2, 1, 0]) #转置
