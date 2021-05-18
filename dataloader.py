@@ -19,7 +19,7 @@ class DealDataset(Dataset):
         if type == "train":
             self.train_path = dataset_path[:divide_point]
         else:
-            self.train_path = dataset_path[:divide_point]
+            self.train_path = dataset_path[divide_point:]
 
     def __getitem__(self, index):
         img_path = "data/" + self.train_path[index]["image"]
