@@ -3,6 +3,7 @@ import os
 from dice import *
 from torch import nn
 from dataloader import *
+from modules import *
 
 config = {"learning_rate": 1e-3,
           "epochs": 10}
@@ -48,8 +49,8 @@ def test(model, device, test_loader, num_classes):
             loss += loss.item() * labels.size(0)
             total += labels.size(0)
 
-            dice = SoftDiceLossV2(num_classes)
-            dice_loss += SoftDiceLossV2(y_pred, labels.long())
+            dice = SoftDiceLoss(num_classes)
+            dice_loss += SoftDiceLoss(y_pred, labels.long())
 
     acc /= total
     loss /= total
@@ -63,17 +64,22 @@ if __name__ == "__main__":
     # load data
     train_loader, test_loader = load_data()
 
-    model = None
-    # optimizer = torch.optim.SGD(model.parameters(), lr=0.1, momentum=0.9)
-    optimizer = torch.optim.Adam(model.parameters(),
-                                 lr=0.001,
-                                 betas=(0.9, 0.999),
-                                 eps=1e-08,
-                                 weight_decay=0,
-                                 amsgrad=False)
+    model = UNet(n_channels=1, n_classes=2)
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.1, momentum=0.9)
+
+    # optimizer = torch.optim.Adam(model.parameters(),
+    #                              lr=0.001,
+    #                              betas=(0.9, 0.999),
+    #                              eps=1e-08,
+    #                              weight_decay=0,
+    #                              amsgrad=False)
 
     for epoch in range(config.get('epochs')):
-        pass
+        train(model, device, train_loader, optimizer)
+        if epoch % 10 == 0:
+            acc, loss, dice_loss = test(model, device, test_loader, 2)
+            print(f'### Epoch: {epoch} \n'
+                  f'acc: {acc}\tloss: {loss}\tdice_loss: {dice_loss}')
 
 
 
