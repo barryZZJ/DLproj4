@@ -6,15 +6,27 @@ from dataloader import *
 from modules import *
 
 config = {"learning_rate": 1e-3,
-          "epochs": 10}
+          'batch_size': 8,
+          'use_cut': True,
+          "epochs": 200,
+          'test_every': 10, # 每几个epoch测试一次
+          'device': torch.device("cuda" if torch.cuda.is_available() else "cpu")
+          }
 
+config_debug = {"learning_rate": 1e-3,
+                'batch_size': 1,
+                'use_cut': True,
+                "epochs": 1,
+                'test_every': 1, # 每几个epoch测试一次
+                'device': torch.device("cuda" if torch.cuda.is_available() else "cpu")
+                }
 
 def train(model, device, train_loader, optimizer):
     model = model.to(device)
     loss_save = 0
-    for i_batch, batch_data in enumerate(train_loader):
-        img = batch_data[0].to(device)
-        label = batch_data[1].to(device)
+    for i_batch, (img, label) in enumerate(train_loader):
+        img = img.to(device)
+        label = label.to(device)
         y_pred = model(img)
 
         criterion = nn.CrossEntropyLoss().to(device)
@@ -24,7 +36,7 @@ def train(model, device, train_loader, optimizer):
 
         optimizer.step()
         optimizer.zero_grad()
-    print("Loss\t", loss_save)
+    print("Train loss\t", loss_save)
 
 
 def pred(model, device, test_loader):
@@ -69,10 +81,14 @@ def test(model, device, test_loader, num_classes):
 
 
 if __name__ == "__main__":
+    DEBUG = True
+    if DEBUG:
+        config = config_debug
+
     # device
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = config['device']
     # load data
-    train_loader, test_loader = load_data(batch_size=8, use_aug=False, DEBUG=True)
+    train_loader, test_loader = load_data(batch_size=config['batch_size'], use_cut=config['use_cut'], DEBUG=DEBUG)
 
     model = UNet(n_channels=1, n_classes=2)
     optimizer = torch.optim.SGD(model.parameters(), lr=0.1, momentum=0.9)
@@ -84,9 +100,9 @@ if __name__ == "__main__":
     #                              weight_decay=0,
     #                              amsgrad=False)
 
-    for epoch in range(config.get('epochs')):
+    for epoch in range(1, config['epochs']+1):
         train(model, device, train_loader, optimizer)
-        if epoch % 1 == 0:
+        if epoch % config['test_every'] == 0:
             acc, loss, dice_loss = test(model, device, test_loader, 2)
             print(f'### Epoch: {epoch} \n'
-                  f'acc: {acc}\tloss: {loss}\tdice_loss: {dice_loss}')
+                  f'acc: {acc}\tdice loss: {loss}\tdice_loss: {dice_loss}')
