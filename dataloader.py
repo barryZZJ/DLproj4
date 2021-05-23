@@ -5,6 +5,8 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
+from scipy import ndimage
+import SimpleITK as sitk
 
 
 class DealDataset(Dataset):
@@ -32,27 +34,82 @@ class DealDataset(Dataset):
         self.DEBUG = DEBUG
 
     def __getitem__(self, index):
-        img_path = "data/" + self.train_path[index]["image"]
-        label_path = "data/" + self.train_path[index]["label"]
+        img_path = "data/" + self.train_path[index]["image"].replace("./", "")
+        label_path = "data/" + self.train_path[index]["label"].replace("./", "")
         if self.use_cut:
             img_path = img_path.replace("imagesTr", "imagesTr_Processed").replace(".nii.gz", "_Processed.nii.gz")
-            label_path = label_path.replace("labelsTr", "labelsTr_Processed").replace(".nii.gz", "_Labels_Processed.nii.gz")
-        img = nib.load(img_path).get_fdata(dtype=np.float32)
-        label = nib.load(label_path).get_fdata(dtype=np.float32)
-        if self.transform is not None:
-            img = self.transform(img)# type: torch.Tensor
-            label = self.transform(label)
-            width, height, queue = img.shape
-            # img=img.reshape(-1,width,height,queue)
-            # label=label.reshape(-1,width,height,queue)
-            padding = torch.zeros(990 - width, 512, 512)
-            img = torch.cat([img, padding], 0) / 300
-            label = torch.cat([label, padding], 0)
+            label_path = label_path.replace("labelsTr", "labelsTr_Processed").replace(".nii.gz",
+                                                                                      "_Labels_Processed.nii.gz")
+        # img = nib.load(img_path).get_fdata(dtype=np.float32)
+        # label = nib.load(label_path).get_fdata(dtype=np.float32)
+        img, label = resize(img_path, label_path)
 
-        return img, label  # 990 * 512 * 512
+        if self.transform is not None:
+            img = self.transform(img)  # type: torch.Tensor
+            label = self.transform(label)
+            print(img.shape)
+            height, width, queue = img.shape
+            print(width, height, queue)
+            img = img.reshape(-1, width, height, queue)
+            label = label.reshape(-1, width, height, queue)
+
+            print(img.shape, label.shape)
+            img /= 300
+            if not self.DEBUG:
+                padding = torch.zeros(1, 270 - width, 256, 256)
+                img = torch.cat([img, padding], 1)
+                label = torch.cat([label, padding], 1)
+        return img, label  # 1 * 270 * 256 * 256
 
     def __len__(self):
         return len(self.train_path)
+
+
+def resize(img_path, label_path):
+    expand_slice = 20  # 轴向外侧扩张的slice数量
+    min_size = 48  # 取样的slice数量
+    xy_down_scale = 0.5
+    slice_down_scale = 1
+
+    img = sitk.ReadImage(img_path, sitk.sitkFloat32)
+    img_array = sitk.GetArrayFromImage(img)
+    label = sitk.ReadImage(label_path, sitk.sitkFloat32)
+    label_array = sitk.GetArrayFromImage(label)
+
+    print("Ori shape:", img_array.shape, label_array.shape)
+
+    # 降采样，（对x和y轴进行降采样，slice轴的spacing归一化到slice_down_scale）
+    img_array = ndimage.zoom(img_array,
+                             (img.GetSpacing()[-1] / slice_down_scale, xy_down_scale, xy_down_scale),
+                             order=3)
+    label_array = ndimage.zoom(label_array,
+                               (img.GetSpacing()[-1] / slice_down_scale, xy_down_scale, xy_down_scale),
+                               order=0)
+
+    # 找到肝脏区域开始和结束的slice，并各向外扩张
+    z = np.any(label_array, axis=(1, 2))
+    start_slice, end_slice = np.where(z)[0][[0, -1]]
+
+    # 两个方向上各扩张个slice
+    if start_slice - expand_slice < 0:
+        start_slice = 0
+    else:
+        start_slice -= expand_slice
+
+    if end_slice + expand_slice >= label_array.shape[0]:
+        end_slice = label_array.shape[0] - 1
+    else:
+        end_slice += expand_slice
+    print("Cut out range:", str(start_slice) + '--' + str(end_slice))
+    # 如果这时候剩下的slice数量不足size，直接放弃，这样的数据很少
+    if end_slice - start_slice + 1 < min_size:
+        print('Too little slice，give up the sample:', "ct_file")
+        return None, None
+    # # 截取保留区域
+    img_array = img_array[start_slice:end_slice + 1, :, :]
+    label_array = label_array[start_slice:end_slice + 1, :, :]
+    print("Preprocessed shape:", img_array.shape, label_array.shape)
+    return img_array, label_array
 
 
 def load_data(batch_size=8, use_cut=True, DEBUG=False):
