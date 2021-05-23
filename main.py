@@ -72,7 +72,7 @@ if __name__ == "__main__":
     # device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # load data
-    train_loader, test_loader = load_data()
+    train_loader, test_loader = load_data(batch_size=8, use_aug=False, DEBUG=True)
 
     model = UNet(n_channels=1, n_classes=2)
     optimizer = torch.optim.SGD(model.parameters(), lr=0.1, momentum=0.9)
