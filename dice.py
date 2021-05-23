@@ -50,19 +50,8 @@ def diceCoeff(pred, gt, eps=1e-5, activation='sigmoid'):
 class SoftDiceLoss(nn.Module):
     __name__ = 'dice_loss'
 
-    def __init__(self, activation='sigmoid'):
-        super(SoftDiceLoss, self).__init__()
-        self.activation = activation
-
-    def forward(self, y_pr, y_gt):
-        return 1 - diceCoeff(y_pr, y_gt, activation=self.activation)
-
-
-class SoftDiceLossV2(nn.Module):
-    __name__ = 'dice_loss'
-
     def __init__(self, num_classes, activation='sigmoid', reduction='mean'):
-        super(SoftDiceLossV2, self).__init__()
+        super(SoftDiceLoss, self).__init__()
         self.activation = activation
         self.num_classes = num_classes
 
