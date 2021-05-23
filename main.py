@@ -27,6 +27,16 @@ def train(model, device, train_loader, optimizer):
     print("Loss\t", loss_save)
 
 
+def pred(model, device, test_loader):
+    model.to(device)
+    model.eval()
+    with torch.no_grad():
+        batch_idx, (x, labels) = next(test_loader)
+        x, labels = x.to(device), labels.to(device)
+        y_pred = model(x)
+    return y_pred
+
+
 def test(model, device, test_loader, num_classes):
     model.to(device)
     model.eval()
@@ -76,10 +86,7 @@ if __name__ == "__main__":
 
     for epoch in range(config.get('epochs')):
         train(model, device, train_loader, optimizer)
-        if epoch % 10 == 0:
+        if epoch % 1 == 0:
             acc, loss, dice_loss = test(model, device, test_loader, 2)
             print(f'### Epoch: {epoch} \n'
                   f'acc: {acc}\tloss: {loss}\tdice_loss: {dice_loss}')
-
-
-
