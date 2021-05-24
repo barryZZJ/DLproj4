@@ -55,12 +55,12 @@ class DealDataset(Dataset):
 
             print(img.shape, label.shape)
             img /= 300
-            padding = torch.zeros(1, height, 64 - width, queue)
-            print(padding.shape)
+            padding = torch.zeros(1, height, 128 - width, queue)
+            # print(padding.shape)
             img = torch.cat([img, padding], 2)
             label = torch.cat([label, padding], 2)
         print(img.shape, label.shape)
-        return img, label  # 1 * 270 * 256 * 256
+        return img, label  # 1 * 128 * 64 * 64
 
     def __len__(self):
         return len(self.train_path)
@@ -68,9 +68,9 @@ class DealDataset(Dataset):
 
 def resize(img_path, label_path):
     expand_slice = 10  # 轴向外侧扩张的slice数量
-    min_size = 10  # 取样的slice数量
+    min_size = 1  # 取样的slice数量
     xy_down_scale = 0.125
-    slice_down_scale = 4
+    slice_down_scale = 2.5
 
     img = sitk.ReadImage(img_path, sitk.sitkFloat32)
     img_array = sitk.GetArrayFromImage(img)
@@ -103,9 +103,9 @@ def resize(img_path, label_path):
         end_slice += expand_slice
     print("Cut out range:", str(start_slice) + '--' + str(end_slice))
     # 如果这时候剩下的slice数量不足size，直接放弃，这样的数据很少
-    if end_slice - start_slice + 1 < min_size:
-        print('Too little slice，give up the sample:', "ct_file")
-        return None, None
+    # if end_slice - start_slice + 1 < min_size:
+    #     print('Too little slice，give up the sample:', "ct_file")
+    #     return None, None
     # # 截取保留区域
     img_array = img_array[start_slice:end_slice + 1, :, :]
     label_array = label_array[start_slice:end_slice + 1, :, :]
@@ -123,5 +123,5 @@ def load_data(batch_size=8, use_cut=True, DEBUG=False):
 
 
 if __name__ == '__main__':
-    resize('data/imagesTr_Processed/liver_126_Processed.nii.gz',
-           'data/labelsTr_Processed/liver_126_Labels_Processed.nii.gz')
+    resize('data/imagesTr_Processed/liver_0_Processed.nii.gz',
+           'data/labelsTr_Processed/liver_0_Labels_Processed.nii.gz')
