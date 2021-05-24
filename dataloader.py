@@ -23,14 +23,10 @@ class DealDataset(Dataset):
         self.transform = transform
 
         divide_point = int(len(dataset_path) * 0.8)
-        if DEBUG:
-            divide_point = 1
+        if type == "train":
             self.train_path = dataset_path[:divide_point]
         else:
-            if type == "train":
-                self.train_path = dataset_path[:divide_point]
-            else:
-                self.train_path = dataset_path[divide_point:]
+            self.train_path = dataset_path[divide_point:]
         self.use_cut = use_cut
         self.DEBUG = DEBUG
 
@@ -112,13 +108,12 @@ def resize(img_path, label_path):
     print("Preprocessed shape:", img_array.shape, label_array.shape)
     return img_array, label_array
 
-
 def load_data(batch_size=8, use_cut=True, DEBUG=False):
     train_dataset = DealDataset("train", transform=transforms.ToTensor(), use_cut=use_cut, DEBUG=DEBUG)
     test_dataset = DealDataset("test", transform=transforms.ToTensor(), use_cut=use_cut, DEBUG=DEBUG)
     # 载入数据集
-    train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True, drop_last=True)
-    test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=True, drop_last=True)
+    train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size)
+    test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size)
     return train_loader, test_loader
 
 
