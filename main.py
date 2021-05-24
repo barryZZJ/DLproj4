@@ -13,13 +13,6 @@ config = {"learning_rate": 1e-3,
           'device': torch.device("cuda" if torch.cuda.is_available() else "cpu")
           }
 
-config_debug = {"learning_rate": 1e-3,
-                'batch_size': 1,
-                'use_cut': True,
-                "epochs": 1,
-                'test_every': 1, # 每几个epoch测试一次
-                'device': torch.device("cuda" if torch.cuda.is_available() else "cpu")
-                }
 
 def train(model, device, train_loader, optimizer):
     model = model.to(device)
@@ -82,6 +75,15 @@ def test(model, device, test_loader, num_classes):
 
 if __name__ == "__main__":
     DEBUG = True
+
+    config_debug = {"learning_rate": 1e-3,
+                    'batch_size': 1,
+                    'use_cut': True,
+                    "epochs": 1,
+                    'test_every': 1,  # 每几个epoch测试一次
+                    'device': torch.device("cuda" if torch.cuda.is_available() else "cpu")
+                    }
+
     if DEBUG:
         config = config_debug
 

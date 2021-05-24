@@ -50,8 +50,8 @@ class DealDataset(Dataset):
             print(img.shape)
             height, width, queue = img.shape
             print(width, height, queue)
-            img = img.reshape(-1, width, height, queue)
-            label = label.reshape(-1, width, height, queue)
+            # img = img.reshape(-1, width, height, queue)
+            # label = label.reshape(-1, width, height, queue)
 
             print(img.shape, label.shape)
             img /= 300
@@ -79,12 +79,12 @@ def resize(img_path, label_path):
     print("Ori shape:", img_array.shape, label_array.shape)
 
     # 降采样，（对x和y轴进行降采样，slice轴的spacing归一化到slice_down_scale）
-    img_array = ndimage.zoom(img_array,
-                             (img.GetSpacing()[-1] / slice_down_scale, xy_down_scale, xy_down_scale),
-                             order=3)
-    label_array = ndimage.zoom(label_array,
-                               (img.GetSpacing()[-1] / slice_down_scale, xy_down_scale, xy_down_scale),
-                               order=0)
+    # img_array = ndimage.zoom(img_array,
+    #                          (img.GetSpacing()[-1] / slice_down_scale, xy_down_scale, xy_down_scale),
+    #                          order=3)
+    # label_array = ndimage.zoom(label_array,
+    #                            (img.GetSpacing()[-1] / slice_down_scale, xy_down_scale, xy_down_scale),
+    #                            order=0)
 
     # 找到肝脏区域开始和结束的slice，并各向外扩张
     z = np.any(label_array, axis=(1, 2))
