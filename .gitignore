@@ -129,4 +129,6 @@ dmypy.json
 .pyre/
 
 !/data/readme.md
+!/data/dataset.json
+!/data/dataset_debug.json
 /data/*
