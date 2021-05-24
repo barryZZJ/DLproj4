@@ -22,7 +22,8 @@ def train(model, device, train_loader, optimizer):
         label = label.to(device)
         y_pred = model(img)
 
-        criterion = nn.CrossEntropyLoss().to(device)
+        # criterion = nn.CrossEntropyLoss().to(device)
+        criterion = nn.BCEWithLogitsLoss().to(device)
         loss = criterion(y_pred, label)
         loss_save = loss
         loss.backward()
@@ -45,40 +46,36 @@ def pred(model, device, test_loader):
 def test(model, device, test_loader, num_classes):
     model.to(device)
     model.eval()
-    acc = loss = 0
+    loss = 0
     total = 0
     dice_loss = 0
 
-    criterion = nn.CrossEntropyLoss().to(device)
+    # criterion = nn.CrossEntropyLoss().to(device)
+    criterion = nn.BCEWithLogitsLoss().to(device)
 
     with torch.no_grad():
         for batch_idx, (x, labels) in enumerate(test_loader):
             x, labels = x.to(device), labels.to(device)
             y_pred = model(x)
-            loss = criterion(y_pred, labels.long())
+            loss = criterion(y_pred, labels)
 
-            _, predicted = torch.max(y_pred, -1)
-            correct = predicted.eq(labels).sum()
-
-            acc += correct.item()
             loss += loss.item() * labels.size(0)
             total += labels.size(0)
 
             dice = SoftDiceLoss(num_classes)
-            dice_loss += SoftDiceLoss(y_pred, labels.long())
+            dice_loss += dice.forward(y_pred, labels)
 
-    acc /= total
     loss /= total
-    dice /= total
-    return acc, loss, dice_loss
+    dice_loss /= total
+    return loss, dice_loss
 
 
 if __name__ == "__main__":
-    DEBUG = True
-
+    DEBUG = False
     config_debug = {"learning_rate": 1e-3,
                     'batch_size': 1,
-                    'use_cut': True,
+                    # 'use_cut': True,
+                    'use_cut': False,
                     "epochs": 1,
                     'test_every': 1,  # 每几个epoch测试一次
                     'device': torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -92,7 +89,7 @@ if __name__ == "__main__":
     # load data
     train_loader, test_loader = load_data(batch_size=config['batch_size'], use_cut=config['use_cut'], DEBUG=DEBUG)
 
-    model = UNet(n_channels=1, n_classes=2)
+    model = UNet(n_channels=1, n_classes=1, bilinear=False)
     optimizer = torch.optim.SGD(model.parameters(), lr=0.1, momentum=0.9)
 
     # optimizer = torch.optim.Adam(model.parameters(),
@@ -103,8 +100,9 @@ if __name__ == "__main__":
     #                              amsgrad=False)
 
     for epoch in range(1, config['epochs']+1):
+        print("Training epoch:\t", epoch)
         train(model, device, train_loader, optimizer)
         if epoch % config['test_every'] == 0:
-            acc, loss, dice_loss = test(model, device, test_loader, 2)
+            loss, dice_loss = test(model, device, test_loader, 2)
             print(f'### Epoch: {epoch} \n'
-                  f'acc: {acc}\tdice loss: {loss}\tdice_loss: {dice_loss}')
+                  f'loss: {loss}\tdice_loss: {dice_loss}')
