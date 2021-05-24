@@ -3,6 +3,7 @@ import json
 import nibabel as nib
 import numpy as np
 import torch
+from nibabel.viewers import OrthoSlicer3D
 from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
 from scipy import ndimage
@@ -40,8 +41,7 @@ class DealDataset(Dataset):
             img_path = img_path.replace("imagesTr", "imagesTr_Processed").replace(".nii.gz", "_Processed.nii.gz")
             label_path = label_path.replace("labelsTr", "labelsTr_Processed").replace(".nii.gz",
                                                                                       "_Labels_Processed.nii.gz")
-        # img = nib.load(img_path).get_fdata(dtype=np.float32)
-        # label = nib.load(label_path).get_fdata(dtype=np.float32)
+        print(img_path)
         img, label = resize(img_path, label_path)
 
         if self.transform is not None:
@@ -50,15 +50,17 @@ class DealDataset(Dataset):
             print(img.shape)
             height, width, queue = img.shape
             print(width, height, queue)
-            # img = img.reshape(-1, width, height, queue)
-            # label = label.reshape(-1, width, height, queue)
+            img = img.reshape(-1, height, width, queue)
+            label = label.reshape(-1, height, width, queue)
 
             print(img.shape, label.shape)
             img /= 300
             if self.DEBUG:
-                padding = torch.zeros(1, 64 - width, height, queue)
-                img = torch.cat([img, padding], 1)
-                label = torch.cat([label, padding], 1)
+                padding = torch.zeros(1, height, 64 - width, queue)
+                print(padding.shape)
+                img = torch.cat([img, padding], 2)
+                label = torch.cat([label, padding], 2)
+        print(img.shape, label.shape)
         return img, label  # 1 * 270 * 256 * 256
 
     def __len__(self):
@@ -69,7 +71,7 @@ def resize(img_path, label_path):
     expand_slice = 10  # 轴向外侧扩张的slice数量
     min_size = 10  # 取样的slice数量
     xy_down_scale = 0.125
-    slice_down_scale = 3
+    slice_down_scale = 4
 
     img = sitk.ReadImage(img_path, sitk.sitkFloat32)
     img_array = sitk.GetArrayFromImage(img)
@@ -120,5 +122,7 @@ def load_data(batch_size=8, use_cut=True, DEBUG=False):
     test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=True, drop_last=True)
     return train_loader, test_loader
 
+
 if __name__ == '__main__':
-    resize('data/imagesTr_Processed/liver_0_Processed.nii.gz', 'data/labelsTr_Processed/liver_0_Labels_Processed.nii.gz')
+    resize('data/imagesTr_Processed/liver_126_Processed.nii.gz',
+           'data/labelsTr_Processed/liver_126_Labels_Processed.nii.gz')
