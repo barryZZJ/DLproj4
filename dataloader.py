@@ -55,8 +55,8 @@ class DealDataset(Dataset):
 
             print(img.shape, label.shape)
             img /= 300
-            if not self.DEBUG:
-                padding = torch.zeros(1, 270 - width, 256, 256)
+            if self.DEBUG:
+                padding = torch.zeros(1, 64 - width, height, queue)
                 img = torch.cat([img, padding], 1)
                 label = torch.cat([label, padding], 1)
         return img, label  # 1 * 270 * 256 * 256
@@ -69,7 +69,7 @@ def resize(img_path, label_path):
     expand_slice = 10  # 轴向外侧扩张的slice数量
     min_size = 10  # 取样的slice数量
     xy_down_scale = 0.125
-    slice_down_scale = 1
+    slice_down_scale = 3
 
     img = sitk.ReadImage(img_path, sitk.sitkFloat32)
     img_array = sitk.GetArrayFromImage(img)
@@ -77,15 +77,15 @@ def resize(img_path, label_path):
     label_array = sitk.GetArrayFromImage(label)
 
     print("Ori shape:", img_array.shape, label_array.shape)
-
     # # 降采样，（对x和y轴进行降采样，slice轴的spacing归一化到slice_down_scale）
-    # img_array = ndimage.zoom(img_array,
-    #                          (img.GetSpacing()[-1] / slice_down_scale, xy_down_scale, xy_down_scale),
-    #                          order=3)
-    # label_array = ndimage.zoom(label_array,
-    #                            (img.GetSpacing()[-1] / slice_down_scale, xy_down_scale, xy_down_scale),
-    #                            order=0)
-
+    # print(img.GetSpacing()[-1] / slice_down_scale)
+    img_array = ndimage.zoom(img_array,
+                             (img.GetSpacing()[-1] / slice_down_scale, xy_down_scale, xy_down_scale),
+                             order=3)
+    label_array = ndimage.zoom(label_array,
+                               (img.GetSpacing()[-1] / slice_down_scale, xy_down_scale, xy_down_scale),
+                               order=0)
+    print(img_array.shape)
     # 找到肝脏区域开始和结束的slice，并各向外扩张
     z = np.any(label_array, axis=(1, 2))
     start_slice, end_slice = np.where(z)[0][[0, -1]]
