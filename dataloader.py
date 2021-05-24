@@ -66,9 +66,9 @@ class DealDataset(Dataset):
 
 
 def resize(img_path, label_path):
-    expand_slice = 20  # 轴向外侧扩张的slice数量
-    min_size = 48  # 取样的slice数量
-    xy_down_scale = 0.5
+    expand_slice = 10  # 轴向外侧扩张的slice数量
+    min_size = 10  # 取样的slice数量
+    xy_down_scale = 0.125
     slice_down_scale = 1
 
     img = sitk.ReadImage(img_path, sitk.sitkFloat32)
@@ -78,7 +78,7 @@ def resize(img_path, label_path):
 
     print("Ori shape:", img_array.shape, label_array.shape)
 
-    # 降采样，（对x和y轴进行降采样，slice轴的spacing归一化到slice_down_scale）
+    # # 降采样，（对x和y轴进行降采样，slice轴的spacing归一化到slice_down_scale）
     # img_array = ndimage.zoom(img_array,
     #                          (img.GetSpacing()[-1] / slice_down_scale, xy_down_scale, xy_down_scale),
     #                          order=3)
@@ -119,3 +119,6 @@ def load_data(batch_size=8, use_cut=True, DEBUG=False):
     train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True, drop_last=True)
     test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=True, drop_last=True)
     return train_loader, test_loader
+
+if __name__ == '__main__':
+    resize('data/imagesTr_Processed/liver_0_Processed.nii.gz', 'data/labelsTr_Processed/liver_0_Labels_Processed.nii.gz')
