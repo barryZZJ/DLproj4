@@ -41,19 +41,19 @@ class DealDataset(Dataset):
             img_path = img_path.replace("imagesTr", "imagesTr_Processed").replace(".nii.gz", "_Processed.nii.gz")
             label_path = label_path.replace("labelsTr", "labelsTr_Processed").replace(".nii.gz",
                                                                                       "_Labels_Processed.nii.gz")
-        # print(img_path)
+        print(img_path)
         img, label = resize(img_path, label_path)
 
         if self.transform is not None:
             img = self.transform(img)  # type: torch.Tensor
             label = self.transform(label)
-            # print(img.shape)
+            print(img.shape)
             height, width, queue = img.shape
-            # print(width, height, queue)
+            print(width, height, queue)
             img = img.reshape(-1, height, width, queue)
             label = label.reshape(-1, height, width, queue)
 
-            # print(img.shape, label.shape)
+            print(img.shape, label.shape)
             img /= 300
             padding = torch.zeros(1, height, 64 - width, queue)
             print(padding.shape)
@@ -77,16 +77,16 @@ def resize(img_path, label_path):
     label = sitk.ReadImage(label_path, sitk.sitkFloat32)
     label_array = sitk.GetArrayFromImage(label)
 
-    # print("Ori shape:", img_array.shape, label_array.shape)
+    print("Ori shape:", img_array.shape, label_array.shape)
     # # 降采样，（对x和y轴进行降采样，slice轴的spacing归一化到slice_down_scale）
-    # print(img.GetSpacing()[-1] / slice_down_scale)
+    print(img.GetSpacing()[-1] / slice_down_scale)
     img_array = ndimage.zoom(img_array,
                              (img.GetSpacing()[-1] / slice_down_scale, xy_down_scale, xy_down_scale),
                              order=3)
     label_array = ndimage.zoom(label_array,
                                (img.GetSpacing()[-1] / slice_down_scale, xy_down_scale, xy_down_scale),
                                order=0)
-    # print(img_array.shape)
+    print(img_array.shape)
     # 找到肝脏区域开始和结束的slice，并各向外扩张
     z = np.any(label_array, axis=(1, 2))
     start_slice, end_slice = np.where(z)[0][[0, -1]]
