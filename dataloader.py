@@ -39,32 +39,32 @@ class DealDataset(Dataset):
                 self.train_path = dataset_path[divide_point:]
 
 
-def __getitem__(self, index):
-    img_path = "data/" + self.train_path[index]["image"].replace("./", "")
-    label_path = "data/" + self.train_path[index]["label"].replace("./", "")
-    if self.use_cut:
-        img_path = img_path.replace("imagesTr", "imagesTr_Processed").replace(".nii.gz", "_Processed.nii.gz")
-        label_path = label_path.replace("labelsTr", "labelsTr_Processed").replace(".nii.gz",
-                                                                                  "_Labels_Processed.nii.gz")
-    if self.use_resize:
-        img, label = resize(img_path, label_path)
-    else:
-        img = nib.load(img_path).get_fdata(dtype=np.float32)
-        label = nib.load(label_path).get_fdata(dtype=np.float32)
+    def __getitem__(self, index):
+        img_path = "data/" + self.train_path[index]["image"].replace("./", "")
+        label_path = "data/" + self.train_path[index]["label"].replace("./", "")
+        if self.use_cut:
+            img_path = img_path.replace("imagesTr", "imagesTr_Processed").replace(".nii.gz", "_Processed.nii.gz")
+            label_path = label_path.replace("labelsTr", "labelsTr_Processed").replace(".nii.gz",
+                                                                                      "_Labels_Processed.nii.gz")
+        if self.use_resize:
+            img, label = resize(img_path, label_path)
+        else:
+            img = nib.load(img_path).get_fdata(dtype=np.float32)
+            label = nib.load(label_path).get_fdata(dtype=np.float32)
 
-    if self.transform is not None:
-        img = self.transform(img)  # type: torch.Tensor
-        label = self.transform(label)
-        x, y, z = img.shape
-        img = img.reshape(-1, x, y, z)
-        label = label.reshape(-1, x, y, z)
-        img /= 300
+        if self.transform is not None:
+            img = self.transform(img)  # type: torch.Tensor
+            label = self.transform(label)
+            x, y, z = img.shape
+            img = img.reshape(-1, x, y, z)
+            label = label.reshape(-1, x, y, z)
+            img /= 300
 
-    return img, label  # 1 * 128 * 64 * 64
+        return img, label  # 1 * 128 * 64 * 64
 
 
-def __len__(self):
-    return len(self.train_path)
+    def __len__(self):
+        return len(self.train_path)
 
 
 def resize(img_path, label_path):
