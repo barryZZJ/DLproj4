@@ -100,6 +100,8 @@ def test(model, device, test_loader, num_classes):
 
             dice = SoftDiceLoss(num_classes)
             dice_loss += dice.forward(y_pred, labels)
+            torch.cuda.empty_cache()
+
     gc.collect()
 
     loss /= total
