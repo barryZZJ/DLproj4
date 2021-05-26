@@ -43,9 +43,9 @@ class DealDataset(Dataset):
         img_path = "data/" + self.train_path[index]["image"].replace("./", "")
         label_path = "data/" + self.train_path[index]["label"].replace("./", "")
         if self.use_cut:
-            img_path = img_path.replace("imagesTr", "imagesTr_Processed").replace(".nii.gz", "_Processed.nii.gz")
-            label_path = label_path.replace("labelsTr", "labelsTr_Processed").replace(".nii.gz",
-                                                                                      "_Labels_Processed.nii.gz")
+            img_path = img_path.replace("imagesTr", "imagesTr_Cut").replace(".nii.gz", "_Cut.nii.gz")
+            label_path = label_path.replace("labelsTr", "labelsTr_Cut").replace(".nii.gz",
+                                                                                      "_Labels_Cut.nii.gz")
         if self.use_resize:
             img, label = resize(img_path, label_path)
         else:
