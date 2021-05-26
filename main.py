@@ -9,8 +9,24 @@ bucket_name = 'zzjmnist'
 base_path = 'DLproj4'
 obs = OBS(bucket_name, base_path)
 #%%
-obs.downloadDir('./data', './data')
-os.listdir('./data')
+def mkdir(path):
+    if not os.path.exists(path):
+        os.mkdir(path)
+def download(use_cut):
+    mkdir('./data')
+    obs.downloadFile('./data/dataset.json', './data/dataset.json')
+    if use_cut:
+        mkdir('./data/imagesTr_Processed')
+        mkdir('./data/labelsTr_Processed')
+        obs.downloadDir('./data/imagesTr_Processed', './data/imagesTr_Processed')
+        obs.downloadDir('./data/labelsTr_Processed', './data/labelsTr_Processed')
+    else:
+        mkdir('./data/imagesTr')
+        mkdir('./data/labelsTr')
+        obs.downloadDir('./data/imagesTr', './data/imagesTr')
+        obs.downloadDir('./data/labelsTr', './data/labelsTr')
+    os.listdir('./data')
+
 #%%
 import torch
 import os
