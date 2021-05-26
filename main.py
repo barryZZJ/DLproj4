@@ -2,7 +2,7 @@
 !pip install nibabel
 !pip install SimpleITK
 #%%
-from obs import OBS
+from obsmanip import OBS
 bucket_name = 'zzjmnist'
 base_path = 'DLproj4'
 obs = OBS(bucket_name, base_path)
