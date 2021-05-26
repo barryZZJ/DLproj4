@@ -170,6 +170,8 @@ if __name__ == "__main__":
     if DEBUG:
         config = config_debug
 
+    download(config['use_cut'])
+
     # https://wandb.ai/dlproj/unet
     wandb.init(project='unet', entity='dlproj', config=config)
 
