@@ -7,6 +7,10 @@ bucket_name = 'zzjmnist'
 base_path = 'DLproj4'
 obs = OBS(bucket_name, base_path)
 obs.downloadDir('./wandb', './wandb')
+pyfiles = [filename for filename in obs.listdir('.') if filename.endswith('.py')]
+for filename in pyfiles:
+    obs.downloadFile(filename, filename)
+
 #%%
 def mkdir(path):
     if not os.path.exists(path):
