@@ -19,9 +19,8 @@ def dice_coef(output, target):  # output为预测结果 target为真实结果
 class SoftDiceLoss(nn.Module):
     __name__ = 'dice_loss'
 
-    def __init__(self, activation='sigmoid'):
+    def __init__(self):
         super(SoftDiceLoss, self).__init__()
-        self.activation = activation
 
     def forward(self, y_pr, y_gt):
         return 1 - dice_coef(y_pr, y_gt)
