@@ -1,13 +1,12 @@
 #%%
 !pip install nibabel
 !pip install SimpleITK
-!pip install wandb
 #%%
 from obs import OBS
-import os
 bucket_name = 'zzjmnist'
 base_path = 'DLproj4'
 obs = OBS(bucket_name, base_path)
+obs.downloadDir('./wandb', './wandb')
 #%%
 def mkdir(path):
     if not os.path.exists(path):
@@ -47,7 +46,23 @@ config = {"lr": 0.1,
           'save_dir': './checkpoint',
           'device': torch.device("cuda" if torch.cuda.is_available() else "cpu")
           }
+config_debug = {"lr": 0.1,
+                'momentum': 0.9,
+                'batch_size': 8,
+                'use_cut': False,
+                "epochs": 200,
+                'test_every': 10, # 每几个epoch测试一次
+                'save_every': 10,
+                'save_dir': './checkpoint',
+                'device': torch.device("cuda" if torch.cuda.is_available() else "cpu")
+                }
+DEBUG = False
+if DEBUG:
+    config = config_debug
 
+download(config['use_cut'])
+
+#%%
 def load_checkpoint_if_exists(model, save_dir, obs:OBS=None):
     if obs is not None:
         if obs.exists(obs.abspath(save_dir)):
@@ -156,21 +171,6 @@ def test(model, device, test_loader):
 
 
 if __name__ == "__main__":
-    DEBUG = False
-    config_debug = {"lr": 0.1,
-                    'momentum': 0.9,
-                    'batch_size': 8,
-                    'use_cut': False,
-                    "epochs": 200,
-                    'test_every': 10, # 每几个epoch测试一次
-                    'save_every': 10,
-                    'save_dir': './checkpoint',
-                    'device': torch.device("cuda" if torch.cuda.is_available() else "cpu")
-                    }
-    if DEBUG:
-        config = config_debug
-
-    download(config['use_cut'])
 
     # https://wandb.ai/dlproj/unet
     wandb.init(project='unet', entity='dlproj', config=config)
