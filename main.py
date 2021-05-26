@@ -6,7 +6,6 @@ from obsmanip import OBS
 bucket_name = 'zzjmnist'
 base_path = 'DLproj4'
 obs = OBS(bucket_name, base_path)
-obs.downloadDir('./wandb', './wandb')
 pyfiles = [filename for filename in obs.listdir('.') if filename.endswith('.py')]
 for filename in pyfiles:
     obs.downloadFile(filename, filename)
@@ -15,19 +14,22 @@ for filename in pyfiles:
 def mkdir(path):
     if not os.path.exists(path):
         os.mkdir(path)
-def download(use_cut):
+
+def download(use_cut, use_aug):
     mkdir('./data')
     obs.downloadFile('./data/dataset.json', './data/dataset.json')
     if use_cut:
-        mkdir('./data/imagesTr_Processed')
-        mkdir('./data/labelsTr_Processed')
-        obs.downloadDir('./data/imagesTr_Processed', './data/imagesTr_Processed')
-        obs.downloadDir('./data/labelsTr_Processed', './data/labelsTr_Processed')
+        obs.downloadDir('./data/imagesTr_Cut', './data/imagesTr_Cut')
+        obs.downloadDir('./data/labelsTr_Cut', './data/labelsTr_Cut')
     else:
-        mkdir('./data/imagesTr')
-        mkdir('./data/labelsTr')
-        obs.downloadDir('./data/imagesTr', './data/imagesTr')
-        obs.downloadDir('./data/labelsTr', './data/labelsTr')
+        raise NotImplementedError
+
+    if use_aug:
+        obs.downloadDir('./data/imagesTr_Lr', './data/imagesTr_Lr')
+        obs.downloadDir('./data/labelsTr_Lr', './data/labelsTr_Lr')
+        obs.downloadDir('./data/imagesTr_Ud', './data/imagesTr_Ud')
+        obs.downloadDir('./data/labelsTr_Ud', './data/labelsTr_Ud')
+
     os.listdir('./data')
 
 #%%
@@ -38,12 +40,12 @@ from dice import *
 from torch import nn
 from dataloader import *
 from modules import *
-import wandb
 
 config = {"lr": 0.1,
           'momentum': 0.9,
           'batch_size': 8,
           'use_cut': True,
+          'use_aug': True,
           "epochs": 200,
           'test_every': 10, # 每几个epoch测试一次
           'save_every': 10,
@@ -53,7 +55,8 @@ config = {"lr": 0.1,
 config_debug = {"lr": 0.1,
                 'momentum': 0.9,
                 'batch_size': 8,
-                'use_cut': False,
+                'use_cut': True,
+                'use_aug': False,
                 "epochs": 200,
                 'test_every': 10, # 每几个epoch测试一次
                 'save_every': 10,
@@ -64,7 +67,7 @@ DEBUG = False
 if DEBUG:
     config = config_debug
 
-download(config['use_cut'])
+download(config['use_cut'], config['use_aug'])
 
 #%%
 def load_checkpoint_if_exists(model, save_dir, obs:OBS=None):
@@ -176,9 +179,6 @@ def test(model, device, test_loader):
 
 if __name__ == "__main__":
 
-    # https://wandb.ai/dlproj/unet
-    wandb.init(project='unet', entity='dlproj', config=config)
-
     # device
     device = config['device']
     # load data
@@ -196,18 +196,36 @@ if __name__ == "__main__":
 
     start_epoch = load_checkpoint_if_exists(model, config['save_dir'], obs)
 
+    train_losses = []
+    train_dices = []
+    test_losses = []
+    test_dices = []
+
     for epoch in range(1+start_epoch, config['epochs']+1):
         print("Training epoch:\t", epoch)
         loss, dice = train(model, device, train_loader, optimizer)
         print(f'### Train ### Epoch: {epoch} \n'
               f'loss: {loss}\tdice: {dice}')
-        wandb.log({f'train loss': loss, "epoch": epoch})
-        wandb.log({f'train dice': dice, "epoch": epoch})
+        train_losses.append(','.join([str(epoch), str(loss)]))
+        train_losses.append('\n')
+        train_dices.append(','.join([str(epoch), str(dice)]))
+        train_dices.append('\n')
 
         if epoch % config['test_every'] == 0:
             loss, dice = test(model, device, test_loader)
             save_model(model, epoch, config['save_dir'], obs)
-            wandb.log({f'test loss': loss, "epoch": epoch})
-            wandb.log({f'test dice': dice, "epoch": epoch})
+            test_losses.append(','.join([str(epoch), str(loss)]))
+            test_losses.append('\n')
+            test_dices.append(','.join([str(epoch), str(dice)]))
+            test_dices.append('\n')
             print(f'### Test ### Epoch: {epoch} \n'
                   f'loss: {loss}\tdice: {dice}')
+
+    with obs.open('./train_loss.csv', 'w') as f:
+        f.writelines(train_losses)
+    with obs.open('./train_dice.csv', 'w') as f:
+        f.writelines(train_dices)
+    with obs.open('./test_loss.csv', 'w') as f:
+        f.writelines(test_losses)
+    with obs.open('./test_dice.csv', 'w') as f:
+        f.writelines(test_dices)
