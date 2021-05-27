@@ -53,7 +53,7 @@ config = {"lr": 0.1,
           'batch_size': 8,
           'do_resize': False, # 我们上传的是已经处理好的图片，因此不再使用resize
           'use_aug': True,
-          'auglist': ['Lr', 'Ud'], # 已经实现的增强方案
+          'auglist': ['Lr', 'Ud', 'Rot', 'Turn', 'Shift', 'Zoom', 'Gamma'], # 已经实现的增强方案
           "epochs": 200,
           'test_every': 10, # 每几个epoch测试一次
           'save_every': 10,
@@ -76,8 +76,10 @@ DEBUG = False
 if DEBUG:
     config = config_debug
 
-config['tostr'] = lambda : f"lr{config['lr']}_mom{config['momentum']}_bs{config['batch_size']}" + (f"_aug{''.join(config['auglist'])}" if config['use_aug'] else '')
+config['tostr'] = lambda : f"lr{config['lr']}_mom{config['momentum']}_bs{config['batch_size']}" + (f"_aug{''.join(sorted(config['auglist']))}" if config['use_aug'] else '')
 
+
+#%%
 download(config['use_aug'], config['auglist'])
 
 #%%
