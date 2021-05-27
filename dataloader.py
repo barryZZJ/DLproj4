@@ -21,9 +21,10 @@ class DealDataset(Dataset):
         读取数据、初始化数据
     """
 
-    def __init__(self, type, transform=None, use_cut=True, use_resize=True, DEBUG=False):
-        self.use_resize = use_resize
-        self.use_cut = use_cut
+    def __init__(self, type, transform=None, do_resize=False, use_aug=True, auglist=['Lr', 'Ud'], DEBUG=False):
+        self.do_resize = do_resize
+        self.use_aug = use_aug
+        self.auglist = auglist
         self.DEBUG = DEBUG
         self.transform = transform
         self.index_list = list(map(str, [index for index in range(0, 130)]))
@@ -35,36 +36,31 @@ class DealDataset(Dataset):
                  'label': 'data/labelsTr_Cut/liver_num_Labels_Cut.nii.gz'.replace("num", index)}
                 for index in train_index]
         else:
-            shuffle(self.index_list)
             divide_point = int(len(self.index_list) * 0.8)
             if type == "train":
                 train_index = self.index_list[:divide_point]
                 self.train_path = [
-                    {'image': 'data/imagesTr_Cut/liver_num_Cut.nii.gz'.replace("num", index),
-                     'label': 'data/labelsTr_Cut/liver_num_Labels_Cut.nii.gz'.replace("num", index)}
+                    {'image': 'data/imagesTr_Cut/liver_{}_Cut.nii.gz'.format(index),
+                     'label': 'data/labelsTr_Cut/liver_{}_Labels_Cut.nii.gz'.format(index)}
                     for index in train_index]
-                self.train_path += [
-                    {'image': 'data/imagesTr_Lr/liver_num_Lr.nii.gz'.replace("num", index),
-                     'label': 'data/labelsTr_Lr/liver_num_Labels_Lr.nii.gz'.replace("num", index)}
-                    for index in train_index]
-                self.train_path += [
-                    {'image': 'data/imagesTr_Ud/liver_num_Ud.nii.gz'.replace("num", index),
-                     'label': 'data/labelsTr_Ud/liver_num_Labels_Ud.nii.gz'.replace("num", index)}
-                    for index in train_index]
-
-                shuffle(self.train_path)
-
+                if self.use_aug:
+                    for augmethod in self.auglist:
+                        self.train_path.extend([
+                            {'image': f'data/imagesTr_{augmethod}/liver_{index}_{augmethod}.nii.gz',
+                             'label': f'data/labelsTr_{augmethod}/liver_{index}_Labels_{augmethod}.nii.gz'}
+                            for index in train_index])
+                shuffle(self.train_path) # in place shuffle
             else:
                 train_index = self.index_list[divide_point:]
                 self.train_path = [
-                    {'image': 'data/imagesTr_Cut/liver_num_Cut.nii.gz'.replace("num", index),
-                     'label': 'data/labelsTr_Cut/liver_num_Labels_Cut.nii.gz'.replace("num", index)}
+                    {'image': 'data/imagesTr_Cut/liver_{}_Cut.nii.gz'.format(index),
+                     'label': 'data/labelsTr_Cut/liver_{}_Labels_Cut.nii.gz'.format(index)}
                     for index in train_index]
 
     def __getitem__(self, index):
         img_path = self.train_path[index]["image"]
         label_path = self.train_path[index]["label"]
-        if self.use_resize:
+        if self.do_resize:
             img, label = resize(img_path, label_path)
         else:
             img = nib.load(img_path).get_fdata(dtype=np.float32)
@@ -136,10 +132,12 @@ def resize(img_path, label_path):
     return img_array, label_array
 
 
-def load_data(batch_size=8, use_cut=True, use_resize=False, DEBUG=False):
-    train_dataset = DealDataset("train", transform=transforms.ToTensor(), use_cut=use_cut, use_resize=use_resize,
+def load_data(batch_size=8, do_resize=False, use_aug=True, auglist=['Lr', 'Ud'], DEBUG=False):
+    train_dataset = DealDataset("train", transform=transforms.ToTensor(), do_resize=do_resize,
+                                use_aug=use_aug, auglist=auglist,
                                 DEBUG=DEBUG)
-    test_dataset = DealDataset("test", transform=transforms.ToTensor(), use_cut=use_cut, use_resize=use_resize,
+    test_dataset = DealDataset("test", transform=transforms.ToTensor(), do_resize=do_resize,
+                               use_aug=use_aug, auglist=auglist,
                                DEBUG=DEBUG)
     # 载入数据集
     train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True, drop_last=True)
