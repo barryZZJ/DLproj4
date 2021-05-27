@@ -1,5 +1,6 @@
 import json
-from random import shuffle
+import random
+
 
 import matplotlib
 import nibabel
@@ -37,6 +38,7 @@ class DealDataset(Dataset):
                 for index in train_index]
         else:
             divide_point = int(len(self.index_list) * 0.8)
+            random.shuffle(self.index_list)  # in place shuffle
             if type == "train":
                 train_index = self.index_list[:divide_point]
                 self.train_path = [
@@ -49,7 +51,7 @@ class DealDataset(Dataset):
                             {'image': f'data/imagesTr_{augmethod}/liver_{index}_{augmethod}.nii.gz',
                              'label': f'data/labelsTr_{augmethod}/liver_{index}_Labels_{augmethod}.nii.gz'}
                             for index in train_index])
-                shuffle(self.train_path) # in place shuffle
+                random.shuffle(self.train_path) # in place shuffle
             else:
                 train_index = self.index_list[divide_point:]
                 self.train_path = [
@@ -133,6 +135,7 @@ def resize(img_path, label_path):
 
 
 def load_data(batch_size=8, do_resize=False, use_aug=True, auglist=['Lr', 'Ud'], DEBUG=False):
+    random.seed(0)
     train_dataset = DealDataset("train", transform=transforms.ToTensor(), do_resize=do_resize,
                                 use_aug=use_aug, auglist=auglist,
                                 DEBUG=DEBUG)
