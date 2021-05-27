@@ -1,22 +1,31 @@
 #%%
+
 !pip install nibabel
 !pip install SimpleITK
+
 #%%
+
 from obsmanip import OBS
 bucket_name = 'zzjmnist'
 base_path = 'DLproj4'
 obs = OBS(bucket_name, base_path)
+
 #%%
+
 pyfiles = [filename for filename in obs.listdir('.') if filename.endswith('.py')]
 for filename in pyfiles:
     obs.downloadFile(filename, filename)
 
 #%%
+
 def mkdir(path):
     if not os.path.exists(path):
         os.mkdir(path)
+def mkobsdir(path, obs:OBS):
+    if not obs.exists(obs.abspath(path)):
+        obs.mkdir(path)
 
-def download(use_cut, use_aug):
+def download(use_cut, use_aug, auglist):
     mkdir('./data')
     obs.downloadFile('./data/dataset.json', './data/dataset.json')
     if use_cut:
@@ -26,14 +35,14 @@ def download(use_cut, use_aug):
         raise NotImplementedError
 
     if use_aug:
-        obs.downloadDir('./data/imagesTr_Lr', './data/imagesTr_Lr')
-        obs.downloadDir('./data/labelsTr_Lr', './data/labelsTr_Lr')
-        obs.downloadDir('./data/imagesTr_Ud', './data/imagesTr_Ud')
-        obs.downloadDir('./data/labelsTr_Ud', './data/labelsTr_Ud')
+        for augmethod in auglist:
+            obs.downloadDir(f'./data/imagesTr_{augmethod}', f'./data/imagesTr_{augmethod}')
+            obs.downloadDir(f'./data/labelsTr_{augmethod}', f'./data/labelsTr_{augmethod}')
 
     os.listdir('./data')
 
 #%%
+
 import torch
 import os
 import gc
@@ -45,8 +54,9 @@ from modules import *
 config = {"lr": 0.1,
           'momentum': 0.9,
           'batch_size': 8,
-          'use_cut': True,
+          'do_resize': False, # 我们上传的是已经处理好的图片，因此不再使用resize
           'use_aug': True,
+          'auglist': ['Lr', 'Ud'], # 已经实现的增强方案
           "epochs": 200,
           'test_every': 10, # 每几个epoch测试一次
           'save_every': 10,
@@ -56,8 +66,9 @@ config = {"lr": 0.1,
 config_debug = {"lr": 0.1,
                 'momentum': 0.9,
                 'batch_size': 8,
-                'use_cut': True,
+                'do_resize': False, # 我们上传的是已经处理好的图片，因此不再使用resize
                 'use_aug': False,
+                'auglist': ['Lr', 'Ud'], # 已经实现的增强方案
                 "epochs": 200,
                 'test_every': 10, # 每几个epoch测试一次
                 'save_every': 10,
@@ -68,42 +79,39 @@ DEBUG = False
 if DEBUG:
     config = config_debug
 
-download(config['use_cut'], config['use_aug'])
+config['tostr'] = lambda : f"lr{config['lr']}_mom{config['momentum']}_bs{config['batch_size']}" + (f"_aug{''.join(config['auglist'])}" if config['use_aug'] else '')
+
+download(config['use_cut'], config['use_aug'], config['auglist'])
 
 #%%
-def load_checkpoint_if_exists(model, save_dir, obs:OBS=None):
-    if obs is not None:
-        if obs.exists(obs.abspath(save_dir)):
-            files = [int(filename[:-4]) for filename in obs.listdir(save_dir) if filename.endswith('.pth')]
-        else:
-            print(obs.pre(obs.abspath(save_dir)), "does not exists")
-            files = []
+
+def load_checkpoint_if_exists(model, save_dir, obs:OBS):
+    save_dir = os.path.join(save_dir, config['tostr']())
+    if obs.exists(obs.abspath(save_dir)):
+        files = [int(filename[:-4]) for filename in obs.listdir(save_dir) if filename.endswith('.pth')]
     else:
-        if os.path.exists(save_dir):
-            files = [int(filename[:-4]) for filename in os.listdir(save_dir) if filename.endswith('.pth')]
-        else:
-            print((save_dir), "does not exists")
-            files = []
+        print(obs.pre(obs.abspath(save_dir)), "does not exists")
+        files = []
 
     if files:
         max_file = f"{max(files)}.pth"
-        print("load " + max_file)
+        print("load", save_dir, max_file)
         model.load_state_dict(torch.load(os.path.join(save_dir, max_file)))
         return max(files)
     print('load checkpoint fail')
     return 0
 
-def save_model(model, epoch, save_dir, obs:OBS=None):
-    file = f'{save_dir}/{epoch}.pth'
-    if not os.path.exists(save_dir):
-        os.mkdir(save_dir)
+def save_model(model, epoch, save_dir, obs:OBS):
+    mkdir(save_dir)
+    mkobsdir(save_dir, obs)
+    save_dir = os.path.join(save_dir, config['tostr']())
+    mkdir(save_dir)
+    mkobsdir(save_dir, obs)
+    file = os.path.join(save_dir, f'{epoch}.pth')
+
     torch.save(model.state_dict(), file)
-    if obs is not None:
-        if not obs.exists(obs.abspath(save_dir)):
-            obs.mkdir(save_dir)
-        obs.uploadFile(file, file)
-        print("upload to", obs.pre(obs.abspath(file)))
-    print('save done')
+    obs.uploadFile(file, file)
+    print("upload to", obs.pre(obs.abspath(file)))
 
 def train(model, device, train_loader, optimizer):
     model = model.to(device)
@@ -183,7 +191,7 @@ if __name__ == "__main__":
     # device
     device = config['device']
     # load data
-    train_loader, test_loader = load_data(batch_size=config['batch_size'], use_cut=config['use_cut'], DEBUG=DEBUG)
+    train_loader, test_loader = load_data(config['batch_size'], config['do_resize'], config['use_aug'], config['auglist'], DEBUG=DEBUG)
 
     model = UNet(n_channels=1, n_classes=1, bilinear=False) # TODO bilinear?
     optimizer = torch.optim.SGD(model.parameters(), lr=config['lr'], momentum=config['momentum'])
