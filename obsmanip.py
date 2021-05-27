@@ -29,9 +29,9 @@ class OBS:
             path = path[1:]
         return path
 
-    def pre(self, path=None):
-        if path:
-            return os.path.join('s3://', self.bucket_name, self.rmrt(path))
+    def pre(self, abspath=None):
+        if abspath:
+            return os.path.join('s3://', self.bucket_name, self.rmrt(abspath))
         else:
             return os.path.join('s3://', self.bucket_name, self.rmrt(self.cwd))
 
@@ -85,7 +85,7 @@ class OBS:
         if not os.path.exists(localfilename):
             print(localfilename, 'dose not exists!')
             return
-        obsfilename = self.pre(obsfilename)
+        obsfilename = self.pre(self.abspath(obsfilename))
         print('upload to ', obsfilename)
         mox.file.copy(localfilename, obsfilename)
 
@@ -103,7 +103,7 @@ class OBS:
         if not os.path.exists(localpath):
             print(localpath, 'dose not exists!')
             return
-        obspath = self.pre(obspath)
+        obspath = self.pre(self.abspath(obspath))
         print('upload to ', obspath)
         mox.file.copy_parallel(localpath, obspath)
 
