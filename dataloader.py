@@ -59,6 +59,9 @@ class DealDataset(Dataset):
                      'label': 'data/labelsTr_Cut/liver_{}_Labels_Cut.nii.gz'.format(index)}
                     for index in train_index]
 
+    def shuffle(self):
+        random.shuffle(self.train_path)
+
     def __getitem__(self, index):
         img_path = self.train_path[index]["image"]
         label_path = self.train_path[index]["label"]
