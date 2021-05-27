@@ -25,14 +25,11 @@ def mkobsdir(path, obs:OBS):
     if not obs.exists(obs.abspath(path)):
         obs.mkdir(path)
 
-def download(use_cut, use_aug, auglist):
+def download(use_aug, auglist):
     mkdir('./data')
     obs.downloadFile('./data/dataset.json', './data/dataset.json')
-    if use_cut:
-        obs.downloadDir('./data/imagesTr_Cut', './data/imagesTr_Cut')
-        obs.downloadDir('./data/labelsTr_Cut', './data/labelsTr_Cut')
-    else:
-        raise NotImplementedError
+    obs.downloadDir('./data/imagesTr_Cut', './data/imagesTr_Cut')
+    obs.downloadDir('./data/labelsTr_Cut', './data/labelsTr_Cut')
 
     if use_aug:
         for augmethod in auglist:
@@ -81,7 +78,7 @@ if DEBUG:
 
 config['tostr'] = lambda : f"lr{config['lr']}_mom{config['momentum']}_bs{config['batch_size']}" + (f"_aug{''.join(config['auglist'])}" if config['use_aug'] else '')
 
-download(config['use_cut'], config['use_aug'], config['auglist'])
+download(config['use_aug'], config['auglist'])
 
 #%%
 
