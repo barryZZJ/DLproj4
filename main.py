@@ -93,9 +93,10 @@ def load_checkpoint_if_exists(model, save_dir, obs:OBS):
         files = []
 
     if files:
-        max_file = f"{max(files)}.pth"
-        print("load", save_dir, max_file)
-        model.load_state_dict(torch.load(os.path.join(save_dir, max_file)))
+        max_file = os.path.join(save_dir, f"{max(files)}.pth")
+        print("load", max_file)
+        obs.downloadFile(max_file, max_file)
+        model.load_state_dict(torch.load(max_file))
         return max(files)
     print('load checkpoint fail')
     return 0
