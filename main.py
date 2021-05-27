@@ -80,6 +80,7 @@ config['tostr'] = lambda : f"lr{config['lr']}_mom{config['momentum']}_bs{config[
 
 
 #%%
+
 download(config['use_aug'], config['auglist'])
 
 #%%
@@ -197,6 +198,7 @@ def test(model, device, test_loader):
     return loss_save, dice_save
 
 #%%
+
 if __name__ == "__main__":
 
     # device
@@ -222,6 +224,7 @@ if __name__ == "__main__":
     for epoch in range(1+start_epoch, config['epochs']+1):
         print(f'### Train ### Epoch: {epoch}')
         loss, dice = train(model, device, train_loader, optimizer)
+        train_loader.dataset.shuffle() # 每个epoch shuffle
         print(f'loss: {loss}\tdice: {dice}')
         save_loss('train_loss', [','.join([str(epoch), str(loss)]), '\n'], config['save_dir'], obs)
         save_loss('train_dice', [','.join([str(epoch), str(dice)]), '\n'], config['save_dir'], obs)
