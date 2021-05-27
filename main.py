@@ -100,6 +100,20 @@ def load_checkpoint_if_exists(model, save_dir, obs:OBS):
     print('load checkpoint fail')
     return 0
 
+def save_loss(filename, losses, save_dir, obs:OBS):
+    mkdir(save_dir)
+    mkobsdir(save_dir, obs)
+    save_dir = os.path.join(save_dir, config['tostr']())
+    mkdir(save_dir)
+    mkobsdir(save_dir, obs)
+    file = os.path.join(save_dir, f'{filename}.csv')
+
+    with open(file, 'a') as f:
+        f.writelines(losses)
+
+    with obs.open(file, 'a') as f:
+        f.writelines(losses)
+
 def save_model(model, epoch, save_dir, obs:OBS):
     mkdir(save_dir)
     mkobsdir(save_dir, obs)
@@ -210,30 +224,24 @@ if __name__ == "__main__":
     test_dices = []
 
     for epoch in range(1+start_epoch, config['epochs']+1):
-        print("Training epoch:\t", epoch)
+        print(f'### Train ### Epoch: {epoch}')
         loss, dice = train(model, device, train_loader, optimizer)
-        print(f'### Train ### Epoch: {epoch} \n'
-              f'loss: {loss}\tdice: {dice}')
+        print(f'loss: {loss}\tdice: {dice}')
         train_losses.append(','.join([str(epoch), str(loss)]))
         train_losses.append('\n')
         train_dices.append(','.join([str(epoch), str(dice)]))
         train_dices.append('\n')
+        save_loss('train_loss', train_losses, config['save_dir'], obs)
+        save_loss('train_dice', train_dices, config['save_dir'], obs)
 
         if epoch % config['test_every'] == 0:
-            loss, dice = test(model, device, test_loader)
+            tloss, tdice = test(model, device, test_loader)
             save_model(model, epoch, config['save_dir'], obs)
-            test_losses.append(','.join([str(epoch), str(loss)]))
+            test_losses.append(','.join([str(epoch), str(tloss)]))
             test_losses.append('\n')
-            test_dices.append(','.join([str(epoch), str(dice)]))
+            test_dices.append(','.join([str(epoch), str(tdice)]))
             test_dices.append('\n')
-            print(f'### Test ### Epoch: {epoch} \n'
-                  f'loss: {loss}\tdice: {dice}')
-
-    with obs.open('./train_loss.csv', 'w') as f:
-        f.writelines(train_losses)
-    with obs.open('./train_dice.csv', 'w') as f:
-        f.writelines(train_dices)
-    with obs.open('./test_loss.csv', 'w') as f:
-        f.writelines(test_losses)
-    with obs.open('./test_dice.csv', 'w') as f:
-        f.writelines(test_dices)
+            print(f'### Test ### Epoch: {epoch}')
+            print(f'loss: {tloss}\tdice: {tdice}')
+            save_loss('test_loss', test_losses, config['save_dir'], obs)
+            save_loss('test_dice', test_dices, config['save_dir'], obs)
