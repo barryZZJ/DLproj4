@@ -14,7 +14,7 @@ from torchvision import transforms
 from scipy import ndimage
 import SimpleITK as sitk
 
-matplotlib.use('TkAgg')
+# matplotlib.use('TkAgg')
 
 
 class DealDataset(Dataset):
