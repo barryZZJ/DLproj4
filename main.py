@@ -232,7 +232,7 @@ if __name__ == "__main__":
         train_loader.dataset.shuffle() # 每个epoch shuffle
         print(f'loss: {loss}\tdice: {dice}')
         save_loss('train_loss', [','.join([str(epoch), str(loss)]), '\n'], config['save_dir'], obs)
-        save_loss('train_dice', [','.join([str(epoch), str(dice)]), '\n'], config['save_dir'], obs)
+        # save_loss('train_dice', [','.join([str(epoch), str(dice)]), '\n'], config['save_dir'], obs)
 
         if epoch % config['test_every'] == 0:
             tloss, tdice = test(model, device, test_loader)
@@ -245,7 +245,7 @@ if __name__ == "__main__":
 
         if epoch % config['save_every'] == 0:
             save_model(model, epoch, config['save_dir'], obs)
-            save_loss('test_loss', test_losses, config['save_dir'], obs)
+            # save_loss('test_loss', test_losses, config['save_dir'], obs)
             save_loss('test_dice', test_dices, config['save_dir'], obs)
             test_losses = []
             test_dices = []
