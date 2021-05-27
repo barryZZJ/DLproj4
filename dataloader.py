@@ -49,7 +49,7 @@ class DealDataset(Dataset):
                     for augmethod in self.auglist:
                         self.train_path.extend([
                             {'image': f'data/imagesTr_{augmethod}/liver_{index}_{augmethod}.nii.gz',
-                             'label': f'data/labelsTr_{augmethod}/liver_{index}_Labels_{augmethod}.nii.gz'}
+                             'label': f'data/labelsTr_{augmethod}/liver_{index}_labels_{augmethod}.nii.gz'}
                             for index in train_index])
                 random.shuffle(self.train_path) # in place shuffle
             else:
