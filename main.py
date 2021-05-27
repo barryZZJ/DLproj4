@@ -129,6 +129,7 @@ def save_model(model, epoch, save_dir, obs:OBS):
 
 def train(model, device, train_loader, optimizer):
     model = model.to(device)
+    model.train()
     loss_save = 0
     dice_save = 0
     total = 0
