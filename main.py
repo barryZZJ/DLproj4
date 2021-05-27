@@ -52,7 +52,7 @@ config = {"lr": 0.1,
           'momentum': 0.9,
           'batch_size': 8,
           'do_resize': False, # 我们上传的是已经处理好的图片，因此不再使用resize
-          'use_aug': True,
+          'use_aug': False,
           'auglist': ['Lr', 'Ud', 'Rot', 'Turn', 'Shift', 'Zoom', 'Gamma'], # 已经实现的增强方案
           "epochs": 200,
           'test_every': 10, # 每几个epoch测试一次
@@ -134,8 +134,6 @@ def train(model, device, train_loader, optimizer):
     total = 0
 
     criterion = nn.BCEWithLogitsLoss().to(device)
-    dice = SoftDiceLoss()
-    dice.eval()
 
     for batch_idx, (x, labels) in enumerate(train_loader):
         gc.collect()
@@ -147,7 +145,7 @@ def train(model, device, train_loader, optimizer):
         loss.backward()
         total += labels.size(0)
 
-        dice_save += dice.forward(y_pred, labels)
+        dice_save += dice_coef(y_pred, labels)
 
         optimizer.step()
         optimizer.zero_grad()
@@ -177,8 +175,6 @@ def test(model, device, test_loader):
     total = 0
 
     criterion = nn.BCEWithLogitsLoss().to(device)
-    dice = SoftDiceLoss()
-    dice.eval()
 
     with torch.no_grad():
         for batch_idx, (x, labels) in enumerate(test_loader):
@@ -190,7 +186,7 @@ def test(model, device, test_loader):
             loss_save += loss.item() * labels.size(0)
             total += labels.size(0)
 
-            dice_save += dice.forward(y_pred, labels)
+            dice_save += dice_coef(y_pred, labels)
             torch.cuda.empty_cache()
 
     gc.collect()
@@ -199,7 +195,7 @@ def test(model, device, test_loader):
     dice_save /= total
     return loss_save, dice_save
 
-
+#%%
 if __name__ == "__main__":
 
     # device
@@ -219,8 +215,6 @@ if __name__ == "__main__":
 
     start_epoch = load_checkpoint_if_exists(model, config['save_dir'], obs)
 
-    train_losses = []
-    train_dices = []
     test_losses = []
     test_dices = []
 
@@ -228,21 +222,21 @@ if __name__ == "__main__":
         print(f'### Train ### Epoch: {epoch}')
         loss, dice = train(model, device, train_loader, optimizer)
         print(f'loss: {loss}\tdice: {dice}')
-        train_losses.append(','.join([str(epoch), str(loss)]))
-        train_losses.append('\n')
-        train_dices.append(','.join([str(epoch), str(dice)]))
-        train_dices.append('\n')
-        save_loss('train_loss', train_losses, config['save_dir'], obs)
-        save_loss('train_dice', train_dices, config['save_dir'], obs)
+        save_loss('train_loss', [','.join([str(epoch), str(loss)]), '\n'], config['save_dir'], obs)
+        save_loss('train_dice', [','.join([str(epoch), str(dice)]), '\n'], config['save_dir'], obs)
 
         if epoch % config['test_every'] == 0:
             tloss, tdice = test(model, device, test_loader)
-            save_model(model, epoch, config['save_dir'], obs)
             test_losses.append(','.join([str(epoch), str(tloss)]))
             test_losses.append('\n')
             test_dices.append(','.join([str(epoch), str(tdice)]))
             test_dices.append('\n')
             print(f'### Test ### Epoch: {epoch}')
             print(f'loss: {tloss}\tdice: {tdice}')
+
+        if epoch % config['save_every'] == 0:
+            save_model(model, epoch, config['save_dir'], obs)
             save_loss('test_loss', test_losses, config['save_dir'], obs)
             save_loss('test_dice', test_dices, config['save_dir'], obs)
+            test_losses = []
+            test_dices = []
