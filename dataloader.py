@@ -1,4 +1,5 @@
 import json
+from random import shuffle
 
 import matplotlib
 import nibabel
@@ -25,27 +26,44 @@ class DealDataset(Dataset):
         self.use_cut = use_cut
         self.DEBUG = DEBUG
         self.transform = transform
-
+        self.index_list = list(map(str, [index for index in range(0, 130)]))
         if DEBUG:
-            dataset_path = json.load(open("data/dataset_debug.json"))["training"]
             divide_point = 1
-            self.train_path = dataset_path[:divide_point]
+            train_index = self.index_list[:divide_point]
+            self.train_path = [
+                {'image': 'data/imagesTr_Cut/liver_num_Cut.nii.gz'.replace("num", index),
+                 'label': 'data/labelsTr_Cut/liver_num_Labels_Cut.nii.gz'.replace("num", index)}
+                for index in train_index]
         else:
-            dataset_path = json.load(open("data/dataset.json"))["training"]
-            divide_point = int(len(dataset_path) * 0.8)
+            shuffle(self.index_list)
+            divide_point = int(len(self.index_list) * 0.8)
             if type == "train":
-                self.train_path = dataset_path[:divide_point]
-            else:
-                self.train_path = dataset_path[divide_point:]
+                train_index = self.index_list[:divide_point]
+                self.train_path = [
+                    {'image': 'data/imagesTr_Cut/liver_num_Cut.nii.gz'.replace("num", index),
+                     'label': 'data/labelsTr_Cut/liver_num_Labels_Cut.nii.gz'.replace("num", index)}
+                    for index in train_index]
+                self.train_path += [
+                    {'image': 'data/imagesTr_Lr/liver_num_Lr.nii.gz'.replace("num", index),
+                     'label': 'data/labelsTr_Lr/liver_num_Labels_Lr.nii.gz'.replace("num", index)}
+                    for index in train_index]
+                self.train_path += [
+                    {'image': 'data/imagesTr_Ud/liver_num_Ud.nii.gz'.replace("num", index),
+                     'label': 'data/labelsTr_Ud/liver_num_Labels_Ud.nii.gz'.replace("num", index)}
+                    for index in train_index]
 
+                shuffle(self.train_path)
+
+            else:
+                train_index = self.index_list[divide_point:]
+                self.train_path = [
+                    {'image': 'data/imagesTr_Cut/liver_num_Cut.nii.gz'.replace("num", index),
+                     'label': 'data/labelsTr_Cut/liver_num_Labels_Cut.nii.gz'.replace("num", index)}
+                    for index in train_index]
 
     def __getitem__(self, index):
-        img_path = "data/" + self.train_path[index]["image"].replace("./", "")
-        label_path = "data/" + self.train_path[index]["label"].replace("./", "")
-        if self.use_cut:
-            img_path = img_path.replace("imagesTr", "imagesTr_Cut").replace(".nii.gz", "_Cut.nii.gz")
-            label_path = label_path.replace("labelsTr", "labelsTr_Cut").replace(".nii.gz",
-                                                                                      "_Labels_Cut.nii.gz")
+        img_path = self.train_path[index]["image"]
+        label_path = self.train_path[index]["label"]
         if self.use_resize:
             img, label = resize(img_path, label_path)
         else:
@@ -61,7 +79,6 @@ class DealDataset(Dataset):
             img /= 300
 
         return img, label  # 1 * 128 * 64 * 64
-
 
     def __len__(self):
         return len(self.train_path)
@@ -119,7 +136,7 @@ def resize(img_path, label_path):
     return img_array, label_array
 
 
-def load_data(batch_size=8, use_cut=True, use_resize=True, DEBUG=False):
+def load_data(batch_size=8, use_cut=True, use_resize=False, DEBUG=False):
     train_dataset = DealDataset("train", transform=transforms.ToTensor(), use_cut=use_cut, use_resize=use_resize,
                                 DEBUG=DEBUG)
     test_dataset = DealDataset("test", transform=transforms.ToTensor(), use_cut=use_cut, use_resize=use_resize,
@@ -131,5 +148,6 @@ def load_data(batch_size=8, use_cut=True, use_resize=True, DEBUG=False):
 
 
 if __name__ == '__main__':
-    resize('data/imagesTr_Processed/liver_3_Processed.nii.gz',
-           'data/labelsTr_Processed/liver_3_Labels_Processed.nii.gz')
+    # resize('data/imagesTr_Processed/liver_3_Processed.nii.gz',
+    #        'data/labelsTr_Processed/liver_3_Labels_Processed.nii.gz')
+    train_loader, test_loader = load_data()
