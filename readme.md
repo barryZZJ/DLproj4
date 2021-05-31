@@ -20,3 +20,8 @@
 https://github.com/milesial/Pytorch-UNet
 
 https://github.com/xiaopeng-liao/Pytorch-UNet
+
+特点：
+obs upload/download
+checkpoint
+shuffle every epoch
