@@ -80,8 +80,9 @@ class DealDataset(Dataset):
             img = np.load(img_path) # type:
             if label_path.endswith('.zip'):
                 extract(label_path)
-                label_path.replace('.zip','.npy')
-            label = np.load(label_path)
+                label = np.load(label_path.replace('.zip','.npy'))
+            else:
+                label = np.load(label_path)
         else:
             if self.do_resize:
                 img, label = resize(img_path, label_path)
@@ -104,6 +105,10 @@ class DealDataset(Dataset):
             #     label = label.reshape(-1, x, y)
 
         return img, label  # 1 * 128 * 64 * 64
+
+    def __delitem__(self, index):
+        print('remove', self.train_path[index]['label'].replace('.zip','.npy'))
+        os.remove(self.train_path[index]['label'].replace('.zip','.npy'))
 
     def __len__(self):
         return len(self.train_path)

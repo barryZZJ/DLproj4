@@ -11,17 +11,6 @@ base_path = 'DLproj4'
 obs = OBS(bucket_name, base_path)
 
 #%%
-import zipfile
-import os
-path = './data/labelsTr_2d.zip'
-obs.downloadFile(path, path)
-zip_file = zipfile.ZipFile(path)
-zip_file.extractall('./data/labelsTr_2d')
-print(os.listdir('./data/labelsTr_2d'))
-for fn in os.listdir('./data/labelsTr_2d'):
-    obs.uploadFile(os.path.join('./data/labelsTr_2d', fn), os.path.join('./data/labelsTr_2d', fn))
-
-#%%
 
 pyfiles = [filename for filename in obs.listdir('.') if filename.endswith('.py')]
 for filename in pyfiles:
@@ -39,33 +28,17 @@ def mkobsdir(path, obs:OBS):
     if not obs.exists(obs.abspath(path)):
         obs.mkdir(path)
 
-def download(use_aug, auglist, extract_labels=False):
+def download(use_aug, auglist, extract_labels=True):
     mkdir('./data')
     # obs.downloadDir('./data/imagesTr_Cut', './data/imagesTr_Cut')
     # obs.downloadDir('./data/labelsTr_Cut', './data/labelsTr_Cut')
     obs.downloadDir('./data/imagesTr_2d', './data/imagesTr_2d')
-    if not extract_labels:
-        mkdir('./data/labelsTr_2d')
-        for f in obs.listdir('./data/labelsTr_2d'):
-            if f.endswith('.zip'):
-                obs.downloadFile(os.path.join('./data/labelsTr_2d',f), os.path.join('./data/labelsTr_2d',f))
-    else:
-        obs.downloadFile('./data/labelsTr_2d.zip', './data/labelsTr_2d.zip')
-        zip_file = zipfile.ZipFile('./data/labelsTr_2d.zip')
-        zip_list = zip_file.namelist()  # 得到压缩包里所有文件
-        print('extracting...')
-        scale = len(zip_list)
-        start = time.perf_counter()
-        for i, f in enumerate(zip_list):
-            zip_file.extract(f, './data/labelsTr_2d')  # 循环解压文件到指定目录
-            a = "*" * i
-            b = "." * (scale - i)
-            c = (i / scale) * 100
-            dur = time.perf_counter() - start
-            print("\r{:^3.0f}%[{}->{}]{:.2f}s".format(c, a, b, dur), end="")
-            sys.stdout.flush()
-        print('\ndone')
-        zip_file.close()  # 关闭文件，必须有，释放内存
+    if extract_labels:
+        path = './data/labelsTr_2d.zip'
+        obs.downloadFile(path, path)
+        zip_file = zipfile.ZipFile(path)
+        zip_file.extractall('./data/labelsTr_2d')
+        print(os.listdir('./data/labelsTr_2d')[:5])
 
     if use_aug:
         for augmethod in auglist:
@@ -182,9 +155,9 @@ def train(model, device, train_loader, optimizer):
     criterion = nn.BCEWithLogitsLoss().to(device)
     # criterion = DiceLoss().to(device)
 
-    for batch_idx, (x, labels) in enumerate(train_loader):
+    for batch_idx, (x, labels1) in enumerate(train_loader):
         gc.collect()
-        x, labels = x.to(device), labels.to(device)
+        x, labels = x.to(device), labels1.to(device)
         y_pred = model(x)
         loss = criterion(y_pred, labels)
 
@@ -197,6 +170,7 @@ def train(model, device, train_loader, optimizer):
         optimizer.step()
         optimizer.zero_grad()
         torch.cuda.empty_cache()
+        del labels1 # 删除对应npy文件，下次使用时再解压
 
     gc.collect()
 
@@ -225,9 +199,9 @@ def test(model, device, test_loader):
     # criterion = DiceLoss().to(device)
 
     with torch.no_grad():
-        for batch_idx, (x, labels) in enumerate(test_loader):
+        for batch_idx, (x, labels1) in enumerate(test_loader):
             gc.collect()
-            x, labels = x.to(device), labels.to(device)
+            x, labels = x.to(device), labels1.to(device)
             y_pred = model(x)
             loss = criterion(y_pred, labels)
 
@@ -236,6 +210,7 @@ def test(model, device, test_loader):
 
             dice_save += dice_coef(y_pred, labels)
             torch.cuda.empty_cache()
+            del labels1 # 删除对应npy文件，下次使用时再解压
 
     gc.collect()
 
