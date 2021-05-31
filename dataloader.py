@@ -43,6 +43,8 @@ class DealDataset(Dataset):
             if read2D_image:
                 self.train_image_path = os.listdir('data/imagesTr_2d')
                 self.train_label_path = os.listdir('data/labelsTr_2d')
+                random.shuffle(self.train_image_path)
+                random.shuffle(self.train_label_path)
                 divide_point = int(len(self.train_image_path) * 0.8)
                 if type == "train":
                     self.train_image_path = self.train_image_path[:divide_point]
@@ -50,14 +52,12 @@ class DealDataset(Dataset):
                     self.train_path = [{'image': self.train_image_path[index],
                                         'label': self.train_label_path[index]}
                                        for index in range(len(self.train_image_path))]
-                    random.shuffle(self.train_path)  # in place shuffle
                 else:
                     self.train_image_path = self.train_image_path[:divide_point]
                     self.train_label_path = self.train_label_path[:divide_point]
                     self.train_path = [{'image': self.train_image_path[index],
                                         'label': self.train_label_path[index]}
                                        for index in range(len(self.train_image_path))]
-                    random.shuffle(self.train_path)  # in place shuffle
 
             else:
                 divide_point = int(len(self.index_list) * 0.8)
@@ -81,6 +81,7 @@ class DealDataset(Dataset):
                         {'image': 'data/imagesTr_Cut/liver_{}_Cut.nii.gz'.format(index),
                          'label': 'data/labelsTr_Cut/liver_{}_Labels_Cut.nii.gz'.format(index)}
                         for index in train_index]
+                    random.shuffle(self.train_path)  # in place shuffle
 
     def shuffle(self):
         random.shuffle(self.train_path)
@@ -181,12 +182,13 @@ def resize(img_path, label_path):
 
 def load_data(batch_size=8, do_resize=False, use_aug=True, auglist=['Lr', 'Ud'], DEBUG=False):
     random.seed(0)
+    read2D_image = True
     train_dataset = DealDataset("train", transform=transforms.ToTensor(), do_resize=do_resize,
                                 use_aug=use_aug, auglist=auglist,
-                                DEBUG=DEBUG)
+                                DEBUG=DEBUG, read2D_image=read2D_image)
     test_dataset = DealDataset("test", transform=transforms.ToTensor(), do_resize=do_resize,
                                use_aug=use_aug, auglist=auglist,
-                               DEBUG=DEBUG)
+                               DEBUG=DEBUG,read2D_image=read2D_image)
     # 载入数据集
     train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True, drop_last=True)
     test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=True, drop_last=True)
@@ -197,5 +199,7 @@ if __name__ == '__main__':
     # resize('data/imagesTr/liver_3.nii.gz',
     #        'data/labelsTr/liver_3.nii.gz')
     x = np.load(f'data/imagesTr_Numpy/imagesTr_numpy_{0}.npy')
-
-    train_loader, test_loader = load_data()
+    y = os.listdir('data/imagesTr_Numpy')
+    random.shuffle(y)
+    print(y)
+    # train_loader, test_loader = load_data()
