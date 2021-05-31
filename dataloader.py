@@ -101,11 +101,11 @@ class DealDataset(Dataset):
                 x, y, z = img.shape
                 img = img.reshape(-1, x, y, z)
                 label = label.reshape(-1, x, y, z)
-                img /= 300
-            else:
-                x, y = img.shape
-                img = img.reshape(-1, x, y)
-                label = label.reshape(-1, x, y)
+            #     img /= 300
+            # else:
+                # x, y = img.shape
+                # img = img.reshape(-1, x, y)
+                # label = label.reshape(-1, x, y)
 
         return img, label  # 1 * 128 * 64 * 64
 
