@@ -1,44 +1,36 @@
-# %%
+#%%
 
-!pip
-install
-nibabel
-!pip
-install
-SimpleITK
+!pip install nibabel
+!pip install SimpleITK
 
-# %%
+#%%
 
 from obsmanip import OBS
-
 bucket_name = 'zzjmnist'
 base_path = 'DLproj4'
 obs = OBS(bucket_name, base_path)
 
-# %%
+#%%
 
 pyfiles = [filename for filename in obs.listdir('.') if filename.endswith('.py')]
 for filename in pyfiles:
     obs.downloadFile(filename, filename)
 
-
-# %%
+#%%
 
 def mkdir(path):
     if not os.path.exists(path):
         os.mkdir(path)
-
-
-def mkobsdir(path, obs: OBS):
+def mkobsdir(path, obs:OBS):
     if not obs.exists(obs.abspath(path)):
         obs.mkdir(path)
 
-
 def download(use_aug, auglist):
     mkdir('./data')
-    obs.downloadFile('./data/dataset.json', './data/dataset.json')
-    obs.downloadDir('./data/imagesTr_Cut', './data/imagesTr_Cut')
-    obs.downloadDir('./data/labelsTr_Cut', './data/labelsTr_Cut')
+    # obs.downloadDir('./data/imagesTr_Cut', './data/imagesTr_Cut')
+    # obs.downloadDir('./data/labelsTr_Cut', './data/labelsTr_Cut')
+    obs.downloadDir('./data/imagesTr_2d', './data/imagesTr_2d')
+    obs.downloadDir('./data/labelsTr_2d', './data/labelsTr_2d')
 
     if use_aug:
         for augmethod in auglist:
@@ -47,8 +39,7 @@ def download(use_aug, auglist):
 
     os.listdir('./data')
 
-
-# %%
+#%%
 
 import torch
 import os
@@ -60,51 +51,50 @@ from models import UNet, UNetv2, UNet3d, ResUNet, R2UNet
 
 config = {
     'optimizer': 'adam',
-    'sgd': {'lr': 0.1,
-            'momentum': 0.9},
-    'adam': {'lr': 0.1,
-             'betas': (0.9, 0.999),
-             'eps': 1e-08,
-             'weight_decay': 0.001,
-             'amsgrad': True},
+    'sgd':{'lr':0.1,
+           'momentum':0.9},
+    'adam':{'lr': 0.001,
+            'betas': (0.9, 0.999),
+            'eps':1e-08,
+            'weight_decay': 0.001,
+            'amsgrad': True},
 
     'batch_size': 8,
-    'do_resize': False,  # 我们上传的是已经处理好的图片，因此不再使用resize
+    'do_resize': False, # 我们上传的是已经处理好的图片，因此不再使用resize
     'use_aug': False,
-    'auglist': ['Lr', 'Ud', 'Rot', 'Turn', 'Shift', 'Zoom', 'Gamma'],  # 已经实现的增强方案
+    'auglist': ['Lr', 'Ud', 'Rot', 'Turn', 'Shift', 'Zoom', 'Gamma'], # 已经实现的增强方案
+    'read2D_image': True, # 使用已切片的2d图像
     "epochs": 200,
-    'test_every': 10,  # 每几个epoch测试一次
+    'test_every': 10, # 每几个epoch测试一次
     'save_every': 10,
     'save_dir': './checkpoint',
     'device': torch.device("cuda" if torch.cuda.is_available() else "cpu")
-}
+    }
 config_debug = {"lr": 0.1,
                 'momentum': 0.9,
                 'batch_size': 8,
-                'do_resize': False,  # 我们上传的是已经处理好的图片，因此不再使用resize
+                'do_resize': False, # 我们上传的是已经处理好的图片，因此不再使用resize
                 'use_aug': False,
-                'auglist': ['Lr', 'Ud'],  # 已经实现的增强方案
+                'auglist': ['Lr', 'Ud'], # 已经实现的增强方案
                 "epochs": 200,
-                'test_every': 10,  # 每几个epoch测试一次
+                'test_every': 10, # 每几个epoch测试一次
                 'save_every': 10,
                 }
 DEBUG = False
 if DEBUG:
-    for key, val in config_debug.items():
-        config[key] = val
+    for key,val in config_debug.items():
+        config[key]=val
 
-config[
-    'tostr'] = lambda: f"opt{config['optimizer']}_{'_'.join(['{}{}'.format(key, val) for key, val in config[config['optimizer']].items()])}_bs{config['batch_size']}" + (
-    f"_aug{''.join(sorted(config['auglist']))}" if config['use_aug'] else '')
+config['tostr'] = lambda : f"opt{config['optimizer']}_{'_'.join(['{}{}'.format(key, val) for key, val in config[config['optimizer']].items()])}_bs{config['batch_size']}" + (f"_aug{''.join(sorted(config['auglist']))}" if config['use_aug'] else '')
 
-# %%
+
+#%%
 
 download(config['use_aug'], config['auglist'])
 
+#%%
 
-# %%
-
-def load_checkpoint_if_exists(model, save_dir, obs: OBS):
+def load_checkpoint_if_exists(model, save_dir, obs:OBS):
     save_dir = os.path.join(save_dir, config['tostr']())
     if obs.exists(obs.abspath(save_dir)):
         files = [int(filename[:-4]) for filename in obs.listdir(save_dir) if filename.endswith('.pth')]
@@ -121,8 +111,7 @@ def load_checkpoint_if_exists(model, save_dir, obs: OBS):
     print('load checkpoint fail')
     return 0
 
-
-def save_loss(filename, losses, save_dir, obs: OBS):
+def save_loss(filename, losses, save_dir, obs:OBS):
     mkdir(save_dir)
     mkobsdir(save_dir, obs)
     save_dir = os.path.join(save_dir, config['tostr']())
@@ -136,8 +125,7 @@ def save_loss(filename, losses, save_dir, obs: OBS):
     with obs.open(file, 'a') as f:
         f.writelines(losses)
 
-
-def save_model(model, epoch, save_dir, obs: OBS):
+def save_model(model, epoch, save_dir, obs:OBS):
     mkdir(save_dir)
     mkobsdir(save_dir, obs)
     save_dir = os.path.join(save_dir, config['tostr']())
@@ -148,7 +136,6 @@ def save_model(model, epoch, save_dir, obs: OBS):
     torch.save(model.state_dict(), file)
     obs.uploadFile(file, file)
     print("upload to", obs.pre(obs.abspath(file)))
-
 
 def train(model, device, train_loader, optimizer):
     model = model.to(device)
@@ -181,7 +168,6 @@ def train(model, device, train_loader, optimizer):
     loss_save /= total
     dice_save /= total
     return loss_save, dice_save
-
 
 def pred(model, device, test_loader):
     model.to(device)
@@ -222,16 +208,14 @@ def test(model, device, test_loader):
     dice_save /= total
     return loss_save, dice_save
 
-
-# %%
+#%%
 
 if __name__ == "__main__":
 
     # device
     device = config['device']
     # load data
-    train_loader, test_loader = load_data(config['batch_size'], config['do_resize'], config['use_aug'],
-                                          config['auglist'], DEBUG=DEBUG)
+    train_loader, test_loader = load_data(config['batch_size'], config['do_resize'], config['use_aug'], config['auglist'], config['read2D_image'])
 
     # model = UNet(n_channels=1, n_classes=2, bilinear=False) # TODO bilinear?
     model = UNetv2(img_ch=1, output_ch=2)
@@ -246,10 +230,10 @@ if __name__ == "__main__":
     test_losses = []
     test_dices = []
 
-    for epoch in range(1 + start_epoch, config['epochs'] + 1):
+    for epoch in range(1+start_epoch, config['epochs']+1):
         print(f'### Train ### Epoch: {epoch}')
         loss, dice = train(model, device, train_loader, optimizer)
-        train_loader.dataset.shuffle()  # 每个epoch shuffle
+        train_loader.dataset.shuffle() # 每个epoch shuffle
         print(f'loss: {loss}\tdice: {dice}')
         save_loss('train_loss', [','.join([str(epoch), str(loss)]), '\n'], config['save_dir'], obs)
         # save_loss('train_dice', [','.join([str(epoch), str(dice)]), '\n'], config['save_dir'], obs)

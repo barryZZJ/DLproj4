@@ -23,12 +23,10 @@ class DealDataset(Dataset):
         读取数据、初始化数据
     """
 
-    def __init__(self, type, transform=None, do_resize=False, use_aug=True, auglist=['Lr', 'Ud'], DEBUG=False,
-                 read2D_image=True):
+    def __init__(self, type, transform=None, do_resize=False, use_aug=True, auglist=['Lr', 'Ud'], read2D_image=True):
         self.do_resize = do_resize
         self.use_aug = use_aug
         self.auglist = auglist
-        self.DEBUG = DEBUG
         self.transform = transform
         self.read2D_image = read2D_image
         self.index_list = list(map(str, [index for index in range(0, 130)]))
@@ -101,11 +99,11 @@ class DealDataset(Dataset):
                 x, y, z = img.shape
                 img = img.reshape(-1, x, y, z)
                 label = label.reshape(-1, x, y, z)
-                img /= 300
-            else:
-                x, y = img.shape
-                img = img.reshape(-1, x, y)
-                label = label.reshape(-1, x, y)
+                # img /= 300
+            # else:
+            #     x, y = img.shape
+            #     img = img.reshape(-1, x, y)
+            #     label = label.reshape(-1, x, y)
 
         return img, label  # 1 * 128 * 64 * 64
 
@@ -173,15 +171,14 @@ def resize(img_path, label_path):
     return img_array, label_array
 
 
-def load_data(batch_size=8, do_resize=False, use_aug=True, auglist=['Lr', 'Ud'], DEBUG=False):
+def load_data(batch_size=8, do_resize=False, use_aug=True, auglist=['Lr', 'Ud'], read2D_image=True):
     random.seed(0)
-    read2D_image = True
     train_dataset = DealDataset("train", transform=transforms.ToTensor(), do_resize=do_resize,
                                 use_aug=use_aug, auglist=auglist,
-                                DEBUG=DEBUG, read2D_image=read2D_image)
+                                read2D_image=read2D_image)
     test_dataset = DealDataset("test", transform=transforms.ToTensor(), do_resize=do_resize,
                                use_aug=use_aug, auglist=auglist,
-                               DEBUG=DEBUG,read2D_image=read2D_image)
+                               read2D_image=read2D_image)
     # 载入数据集
     train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True, drop_last=True)
     test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=True, drop_last=True)
