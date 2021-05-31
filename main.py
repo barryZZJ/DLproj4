@@ -11,6 +11,17 @@ base_path = 'DLproj4'
 obs = OBS(bucket_name, base_path)
 
 #%%
+import zipfile
+import os
+path = './data/labelsTr_2d.zip'
+obs.downloadFile(path, path)
+zip_file = zipfile.ZipFile(path)
+zip_file.extractall('./data/labelsTr_2d')
+print(os.listdir('./data/labelsTr_2d'))
+for fn in os.listdir('./data/labelsTr_2d'):
+    obs.uploadFile(os.path.join('./data/labelsTr_2d', fn), os.path.join('./data/labelsTr_2d', fn))
+
+#%%
 
 pyfiles = [filename for filename in obs.listdir('.') if filename.endswith('.py')]
 for filename in pyfiles:
@@ -28,13 +39,16 @@ def mkobsdir(path, obs:OBS):
     if not obs.exists(obs.abspath(path)):
         obs.mkdir(path)
 
-def download(use_aug, auglist, extract_labels=True):
+def download(use_aug, auglist, extract_labels=False):
     mkdir('./data')
     # obs.downloadDir('./data/imagesTr_Cut', './data/imagesTr_Cut')
     # obs.downloadDir('./data/labelsTr_Cut', './data/labelsTr_Cut')
     obs.downloadDir('./data/imagesTr_2d', './data/imagesTr_2d')
     if not extract_labels:
-        obs.downloadDir('./data/labelsTr_2d', './data/labelsTr_2d')
+        mkdir('./data/labelsTr_2d')
+        for f in obs.listdir('./data/labelsTr_2d'):
+            if f.endswith('.zip'):
+                obs.downloadFile(os.path.join('./data/labelsTr_2d',f), os.path.join('./data/labelsTr_2d',f))
     else:
         obs.downloadFile('./data/labelsTr_2d.zip', './data/labelsTr_2d.zip')
         zip_file = zipfile.ZipFile('./data/labelsTr_2d.zip')

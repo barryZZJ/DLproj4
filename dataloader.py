@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
 from scipy import ndimage
 import SimpleITK as sitk
-
+import zipfile
 
 # matplotlib.use('TkAgg')
 
@@ -78,6 +78,9 @@ class DealDataset(Dataset):
 
         if self.read2D_image:
             img = np.load(img_path) # type:
+            if label_path.endswith('.zip'):
+                extract(label_path)
+                label_path.replace('.zip','.npy')
             label = np.load(label_path)
         else:
             if self.do_resize:
@@ -105,6 +108,10 @@ class DealDataset(Dataset):
     def __len__(self):
         return len(self.train_path)
 
+def extract(filepath):
+    zip_file = zipfile.ZipFile(filepath)
+    zip_file.extractall(os.path.dirname(filepath))
+    print('extract', filepath)
 
 def resize(img_path, label_path):
     expand_slice = 0  # 轴向外侧扩张的slice数量
