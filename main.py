@@ -17,6 +17,7 @@ for filename in pyfiles:
     obs.downloadFile(filename, filename)
 
 #%%
+import zipfile
 
 def mkdir(path):
     if not os.path.exists(path):
@@ -25,12 +26,22 @@ def mkobsdir(path, obs:OBS):
     if not obs.exists(obs.abspath(path)):
         obs.mkdir(path)
 
-def download(use_aug, auglist):
+def download(use_aug, auglist, extract_labels=True):
     mkdir('./data')
     # obs.downloadDir('./data/imagesTr_Cut', './data/imagesTr_Cut')
     # obs.downloadDir('./data/labelsTr_Cut', './data/labelsTr_Cut')
     obs.downloadDir('./data/imagesTr_2d', './data/imagesTr_2d')
-    obs.downloadDir('./data/labelsTr_2d', './data/labelsTr_2d')
+    if not extract_labels:
+        obs.downloadDir('./data/labelsTr_2d', './data/labelsTr_2d')
+    else:
+        obs.downloadFile('./data/labelsTr_2d.zip', './data/labelsTr_2d.zip')
+        zip_file = zipfile.ZipFile('./data/labelsTr_2d.zip')
+        zip_list = zip_file.namelist()  # 得到压缩包里所有文件
+
+        for f in zip_list:
+            zip_file.extract(f, './data/labelsTr_2d')  # 循环解压文件到指定目录
+
+        zip_file.close()  # 关闭文件，必须有，释放内存
 
     if use_aug:
         for augmethod in auglist:
