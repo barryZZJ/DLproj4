@@ -77,7 +77,7 @@ class DealDataset(Dataset):
             x, y, z = img.shape
             img = img.reshape(-1, x, y, z)
             label = label.reshape(-1, x, y, z)
-            img /= 300
+            # img /= 300
 
         return img, label  # 1 * 128 * 64 * 64
 
@@ -86,14 +86,15 @@ class DealDataset(Dataset):
 
 
 def resize(img_path, label_path):
-    expand_slice = 20  # 轴向外侧扩张的slice数量
+    expand_slice = 0  # 轴向外侧扩张的slice数量
 
     img = sitk.ReadImage(img_path, sitk.sitkFloat32)
     img_array = sitk.GetArrayFromImage(img)
     label = sitk.ReadImage(label_path, sitk.sitkFloat32)
     label_array = sitk.GetArrayFromImage(label)
-    image_divide = False  # 根据label进行目标切分
+    image_divide = True  # 根据label进行目标切分
     image_show = False  # 展示分割后图像
+    image_zoom = False # 缩放图像
 
     if image_divide:
         # 找到肝脏区域开始和结束的slice，并各向外扩张
@@ -115,17 +116,17 @@ def resize(img_path, label_path):
         # # 截取保留区域
         img_array = img_array[start_slice:end_slice + 1, :, :]
         label_array = label_array[start_slice:end_slice + 1, :, :]
-
-    # # 降采样，（对x和y轴进行降采样，slice轴的spacing归一化到slice_down_scale）
-    x, y, z = img_array.shape
-    xy_down_scale = 64 / y
-    slice_down_scale = x / 128
-    img_array = ndimage.zoom(img_array,
-                             (img.GetSpacing()[-1] / slice_down_scale, xy_down_scale, xy_down_scale),
-                             order=3)
-    label_array = ndimage.zoom(label_array,
-                               (img.GetSpacing()[-1] / slice_down_scale, xy_down_scale, xy_down_scale),
-                               order=0)
+    if image_zoom:
+        # # 降采样，（对x和y轴进行降采样，slice轴的spacing归一化到slice_down_scale）
+        x, y, z = img_array.shape
+        xy_down_scale = 64 / y
+        slice_down_scale = x / 128
+        img_array = ndimage.zoom(img_array,
+                                 (img.GetSpacing()[-1] / slice_down_scale, xy_down_scale, xy_down_scale),
+                                 order=3)
+        label_array = ndimage.zoom(label_array,
+                                   (img.GetSpacing()[-1] / slice_down_scale, xy_down_scale, xy_down_scale),
+                                   order=0)
 
     if image_show:
         save_filename = 'output.nii.gz'
@@ -152,6 +153,6 @@ def load_data(batch_size=8, do_resize=False, use_aug=True, auglist=['Lr', 'Ud'],
 
 
 if __name__ == '__main__':
-    # resize('data/imagesTr_Processed/liver_3_Processed.nii.gz',
-    #        'data/labelsTr_Processed/liver_3_Labels_Processed.nii.gz')
-    train_loader, test_loader = load_data()
+    resize('data/imagesTr/liver_3.nii.gz',
+           'data/labelsTr/liver_3.nii.gz')
+    # train_loader, test_loader = load_data()
