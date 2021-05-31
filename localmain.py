@@ -1,43 +1,9 @@
-#%%
-
-!pip install nibabel
-!pip install SimpleITK
-
-#%%
-
-from obsmanip import OBS
-bucket_name = 'zzjmnist'
-base_path = 'DLproj4'
-obs = OBS(bucket_name, base_path)
-
-#%%
-
-pyfiles = [filename for filename in obs.listdir('.') if filename.endswith('.py')]
-for filename in pyfiles:
-    obs.downloadFile(filename, filename)
 
 #%%
 
 def mkdir(path):
     if not os.path.exists(path):
         os.mkdir(path)
-def mkobsdir(path, obs:OBS):
-    if not obs.exists(obs.abspath(path)):
-        obs.mkdir(path)
-
-def download(use_aug, auglist):
-    mkdir('./data')
-    # obs.downloadDir('./data/imagesTr_Cut', './data/imagesTr_Cut')
-    # obs.downloadDir('./data/labelsTr_Cut', './data/labelsTr_Cut')
-    obs.downloadDir('./data/imagesTr_2d', './data/imagesTr_2d')
-    obs.downloadDir('./data/labelsTr_2d', './data/labelsTr_2d')
-
-    if use_aug:
-        for augmethod in auglist:
-            obs.downloadDir(f'./data/imagesTr_{augmethod}', f'./data/imagesTr_{augmethod}')
-            obs.downloadDir(f'./data/labelsTr_{augmethod}', f'./data/labelsTr_{augmethod}')
-
-    os.listdir('./data')
 
 #%%
 
@@ -90,52 +56,43 @@ config['tostr'] = lambda : f"opt{config['optimizer']}_{'_'.join(['{}{}'.format(k
 
 #%%
 
-download(config['use_aug'], config['auglist'])
+# download(config['use_aug'], config['auglist'])
 
 #%%
 
-def load_checkpoint_if_exists(model, save_dir, obs:OBS):
+def load_checkpoint_if_exists(model, save_dir):
     save_dir = os.path.join(save_dir, config['tostr']())
-    if obs.exists(obs.abspath(save_dir)):
-        files = [int(filename[:-4]) for filename in obs.listdir(save_dir) if filename.endswith('.pth')]
+    if os.path.exists(save_dir):
+        files = [int(filename[:-4]) for filename in os.listdir(save_dir) if filename.endswith('.pth')]
     else:
-        print(obs.pre(obs.abspath(save_dir)), "does not exists")
+        print(save_dir, "does not exists")
         files = []
 
     if files:
         max_file = os.path.join(save_dir, f"{max(files)}.pth")
         print("load", max_file)
-        obs.downloadFile(max_file, max_file)
         model.load_state_dict(torch.load(max_file))
         return max(files)
     print('load checkpoint fail')
     return 0
 
-def save_loss(filename, losses, save_dir, obs:OBS):
+def save_loss(filename, losses, save_dir):
     mkdir(save_dir)
-    mkobsdir(save_dir, obs)
     save_dir = os.path.join(save_dir, config['tostr']())
     mkdir(save_dir)
-    mkobsdir(save_dir, obs)
     file = os.path.join(save_dir, f'{filename}.csv')
 
     with open(file, 'a') as f:
         f.writelines(losses)
 
-    with obs.open(file, 'a') as f:
-        f.writelines(losses)
 
-def save_model(model, epoch, save_dir, obs:OBS):
+def save_model(model, epoch, save_dir):
     mkdir(save_dir)
-    mkobsdir(save_dir, obs)
     save_dir = os.path.join(save_dir, config['tostr']())
     mkdir(save_dir)
-    mkobsdir(save_dir, obs)
     file = os.path.join(save_dir, f'{epoch}.pth')
 
     torch.save(model.state_dict(), file)
-    obs.uploadFile(file, file)
-    print("upload to", obs.pre(obs.abspath(file)))
 
 def train(model, device, train_loader, optimizer):
     model = model.to(device)
@@ -225,7 +182,7 @@ if __name__ == "__main__":
     else:
         optimizer = torch.optim.Adam(model.parameters(), **config['adam'])
 
-    start_epoch = load_checkpoint_if_exists(model, config['save_dir'], obs)
+    start_epoch = load_checkpoint_if_exists(model, config['save_dir'])
 
     test_losses = []
     test_dices = []
@@ -235,8 +192,8 @@ if __name__ == "__main__":
         loss, dice = train(model, device, train_loader, optimizer)
         train_loader.dataset.shuffle() # 每个epoch shuffle
         print(f'loss: {loss}\tdice: {dice}')
-        save_loss('train_loss', [','.join([str(epoch), str(loss)]), '\n'], config['save_dir'], obs)
-        # save_loss('train_dice', [','.join([str(epoch), str(dice)]), '\n'], config['save_dir'], obs)
+        save_loss('train_loss', [','.join([str(epoch), str(loss)]), '\n'], config['save_dir'])
+        # save_loss('train_dice', [','.join([str(epoch), str(dice)]), '\n'], config['save_dir'])
 
         if epoch % config['test_every'] == 0:
             tloss, tdice = test(model, device, test_loader)
@@ -248,8 +205,8 @@ if __name__ == "__main__":
             print(f'loss: {tloss}\tdice: {tdice}')
 
         if epoch % config['save_every'] == 0:
-            save_model(model, epoch, config['save_dir'], obs)
-            # save_loss('test_loss', test_losses, config['save_dir'], obs)
-            save_loss('test_dice', test_dices, config['save_dir'], obs)
+            save_model(model, epoch, config['save_dir'])
+            # save_loss('test_loss', test_losses, config['save_dir'])
+            save_loss('test_dice', test_dices, config['save_dir'])
             test_losses = []
             test_dices = []
