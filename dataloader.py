@@ -32,56 +32,49 @@ class DealDataset(Dataset):
         self.transform = transform
         self.read2D_image = read2D_image
         self.index_list = list(map(str, [index for index in range(0, 130)]))
-        if DEBUG:
-            divide_point = 1
-            train_index = self.index_list[:divide_point]
-            self.train_path = [
-                {'image': 'data/imagesTr_Cut/liver_num_Cut.nii.gz'.replace("num", index),
-                 'label': 'data/labelsTr_Cut/liver_num_Labels_Cut.nii.gz'.replace("num", index)}
-                for index in train_index]
-        else:
-            if read2D_image:
-                self.train_image_path = os.listdir('data/imagesTr_2d')
-                self.train_label_path = os.listdir('data/labelsTr_2d')
-                random.shuffle(self.train_image_path)
-                random.shuffle(self.train_label_path)
-                divide_point = int(len(self.train_image_path) * 0.8)
-                if type == "train":
-                    self.train_image_path = self.train_image_path[:divide_point]
-                    self.train_label_path = self.train_label_path[:divide_point]
-                    self.train_path = [{'image': self.train_image_path[index],
-                                        'label': self.train_label_path[index]}
-                                       for index in range(len(self.train_image_path))]
-                else:
-                    self.train_image_path = self.train_image_path[:divide_point]
-                    self.train_label_path = self.train_label_path[:divide_point]
-                    self.train_path = [{'image': self.train_image_path[index],
-                                        'label': self.train_label_path[index]}
-                                       for index in range(len(self.train_image_path))]
-
+        
+        if read2D_image:
+            self.train_image_path = os.listdir('data/imagesTr_2d')
+            self.train_label_path = os.listdir('data/labelsTr_2d')
+            random.shuffle(self.train_image_path)
+            random.shuffle(self.train_label_path)
+            divide_point = int(len(self.train_image_path) * 0.8)
+            if type == "train":
+                self.train_image_path = self.train_image_path[:divide_point]
+                self.train_label_path = self.train_label_path[:divide_point]
+                self.train_path = [{'image': self.train_image_path[index],
+                                    'label': self.train_label_path[index]}
+                                    for index in range(len(self.train_image_path))]
             else:
-                divide_point = int(len(self.index_list) * 0.8)
-                random.shuffle(self.index_list)  # in place shuffle
-                if type == "train":
-                    train_index = self.index_list[:divide_point]
-                    self.train_path = [
-                        {'image': 'data/imagesTr_Cut/liver_{}_Cut.nii.gz'.format(index),
-                         'label': 'data/labelsTr_Cut/liver_{}_Labels_Cut.nii.gz'.format(index)}
-                        for index in train_index]
-                    if self.use_aug:
-                        for augmethod in self.auglist:
-                            self.train_path.extend([
-                                {'image': f'data/imagesTr_{augmethod}/liver_{index}_{augmethod}.nii.gz',
-                                 'label': f'data/labelsTr_{augmethod}/liver_{index}_Labels_{augmethod}.nii.gz'}
-                                for index in train_index])
-                    random.shuffle(self.train_path)  # in place shuffle
-                else:
-                    train_index = self.index_list[divide_point:]
-                    self.train_path = [
-                        {'image': 'data/imagesTr_Cut/liver_{}_Cut.nii.gz'.format(index),
-                         'label': 'data/labelsTr_Cut/liver_{}_Labels_Cut.nii.gz'.format(index)}
-                        for index in train_index]
-                    random.shuffle(self.train_path)  # in place shuffle
+                self.train_image_path = self.train_image_path[divide_point:]
+                self.train_label_path = self.train_label_path[divide_point:]
+                self.train_path = [{'image': self.train_image_path[index],
+                                    'label': self.train_label_path[index]}
+                                    for index in range(len(self.train_image_path))]
+
+        else:
+            divide_point = int(len(self.index_list) * 0.8)
+            random.shuffle(self.index_list)  # in place shuffle
+            if type == "train":
+                train_index = self.index_list[:divide_point]
+                self.train_path = [
+                    {'image': 'data/imagesTr_Cut/liver_{}_Cut.nii.gz'.format(index),
+                        'label': 'data/labelsTr_Cut/liver_{}_Labels_Cut.nii.gz'.format(index)}
+                    for index in train_index]
+                if self.use_aug:
+                    for augmethod in self.auglist:
+                        self.train_path.extend([
+                            {'image': f'data/imagesTr_{augmethod}/liver_{index}_{augmethod}.nii.gz',
+                                'label': f'data/labelsTr_{augmethod}/liver_{index}_Labels_{augmethod}.nii.gz'}
+                            for index in train_index])
+                random.shuffle(self.train_path)  # in place shuffle
+            else:
+                train_index = self.index_list[divide_point:]
+                self.train_path = [
+                    {'image': 'data/imagesTr_Cut/liver_{}_Cut.nii.gz'.format(index),
+                        'label': 'data/labelsTr_Cut/liver_{}_Labels_Cut.nii.gz'.format(index)}
+                    for index in train_index]
+                random.shuffle(self.train_path)  # in place shuffle
 
     def shuffle(self):
         random.shuffle(self.train_path)
