@@ -132,3 +132,6 @@ dmypy.json
 !/data/dataset.json
 !/data/dataset_debug.json
 /data/*
+*.url
+*.pdf
+TODO.txt
