@@ -18,6 +18,8 @@ for filename in pyfiles:
 
 #%%
 import zipfile
+import sys
+import time
 
 def mkdir(path):
     if not os.path.exists(path):
@@ -37,10 +39,18 @@ def download(use_aug, auglist, extract_labels=True):
         obs.downloadFile('./data/labelsTr_2d.zip', './data/labelsTr_2d.zip')
         zip_file = zipfile.ZipFile('./data/labelsTr_2d.zip')
         zip_list = zip_file.namelist()  # 得到压缩包里所有文件
-
-        for f in zip_list:
+        print('extracting...')
+        scale = len(zip_list)
+        start = time.perf_counter()
+        for i, f in enumerate(zip_list):
             zip_file.extract(f, './data/labelsTr_2d')  # 循环解压文件到指定目录
-
+            a = "*" * i
+            b = "." * (scale - i)
+            c = (i / scale) * 100
+            dur = time.perf_counter() - start
+            print("\r{:^3.0f}%[{}->{}]{:.2f}s".format(c, a, b, dur), end="")
+            sys.stdout.flush()
+        print('\ndone')
         zip_file.close()  # 关闭文件，必须有，释放内存
 
     if use_aug:
