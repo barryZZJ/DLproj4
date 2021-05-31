@@ -93,7 +93,7 @@ class OBS:
         obspath = self.abspath(obspath)
         if not self.exists(obspath):
             obspath = self.pre(obspath)
-            print(obspath, 'dose not exists!')
+            print(obspath, 'does not exists!')
             return
         obspath = self.pre(obspath)
         print('download from ', obspath)
@@ -101,7 +101,7 @@ class OBS:
 
     def uploadDir(self, localpath, obspath):
         if not os.path.exists(localpath):
-            print(localpath, 'dose not exists!')
+            print(localpath, 'does not exists!')
             return
         obspath = self.pre(self.abspath(obspath))
         print('upload to ', obspath)
