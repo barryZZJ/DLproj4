@@ -50,14 +50,14 @@ class DealDataset(Dataset):
                     self.train_path = [{'image': self.train_image_path[index],
                                         'label': self.train_label_path[index]}
                                        for index in range(len(self.train_image_path))]
-                    random.shuffle(self.index_list)  # in place shuffle
+                    random.shuffle(self.train_path)  # in place shuffle
                 else:
                     self.train_image_path = self.train_image_path[:divide_point]
                     self.train_label_path = self.train_label_path[:divide_point]
                     self.train_path = [{'image': self.train_image_path[index],
                                         'label': self.train_label_path[index]}
                                        for index in range(len(self.train_image_path))]
-                    random.shuffle(self.index_list)  # in place shuffle
+                    random.shuffle(self.train_path)  # in place shuffle
 
             else:
                 divide_point = int(len(self.index_list) * 0.8)
@@ -90,7 +90,7 @@ class DealDataset(Dataset):
         label_path = self.train_path[index]["label"]
 
         if self.read2D_image:
-            img = np.load(img_path)
+            img = np.load(img_path) # type:
             label = np.load(label_path)
         else:
             if self.do_resize:
@@ -100,7 +100,7 @@ class DealDataset(Dataset):
                 label = nib.load(label_path).get_fdata(dtype=np.float32)
 
         if self.transform is not None:
-            img = self.transform(img)  # type: torch.Tensor
+            img = self.transform(img)
             label = self.transform(label)
 
             if not self.read2D_image:
