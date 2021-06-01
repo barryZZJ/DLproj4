@@ -34,7 +34,7 @@ def download(use_aug, auglist, extract_labels=True):
     mkdir('./data')
     # obs.downloadDir('./data/imagesTr_Cut', './data/imagesTr_Cut')
     # obs.downloadDir('./data/labelsTr_Cut', './data/labelsTr_Cut')
-    #obs.downloadDir('./data/imagesTr_2d', './data/imagesTr_2d')
+    # obs.downloadDir('./data/imagesTr_2d', './data/imagesTr_2d')
     if extract_labels:
         path = './data/labelsTr_2d_256.zip'
         obs.downloadFile(path, path)
@@ -155,8 +155,8 @@ def train(model, device, train_loader, optimizer):
     dice_save = 0
     total = 0
 
-    criterion = nn.BCEWithLogitsLoss().to(device)
-    # criterion = DiceLoss().to(device)
+    # criterion = nn.BCEWithLogitsLoss().to(device)
+    criterion = DiceLoss().to(device)
 
     for batch_idx, (x, labels1) in enumerate(train_loader):
         gc.collect()
@@ -188,7 +188,8 @@ def pred(model, device, test_loader):
         x, labels = next(iter(test_loader))
         x, labels = x.to(device), labels.to(device)
         y_pred = model(x)
-    return y_pred
+
+    return y_pred, labels
 
 
 def test(model, device, test_loader):
@@ -198,8 +199,8 @@ def test(model, device, test_loader):
     dice_save = 0
     total = 0
 
-    criterion = nn.BCEWithLogitsLoss().to(device)
-    # criterion = DiceLoss().to(device)
+    # criterion = nn.BCEWithLogitsLoss().to(device)
+    criterion = DiceLoss().to(device)
 
     with torch.no_grad():
         for batch_idx, (x, labels1) in enumerate(test_loader):
@@ -274,10 +275,15 @@ if __name__ == "__main__":
 #%%
 
 # device
-device = config['device']
+#device = config['device']
 # load data
-train_loader, test_loader = load_data(config['batch_size'], config['do_resize'], config['use_aug'], config['auglist'], config['read2D_image'], obs)
+#train_loader, test_loader = load_data(config['batch_size'], config['do_resize'], config['use_aug'], config['auglist'], config['read2D_image'], obs)
 
 # model = UNet(n_channels=1, n_classes=1, bilinear=False) # TODO bilinear?
-model = UNetv2(img_ch=1, output_ch=1)
-pred(model, device, test_loader)
+#model = UNetv2(img_ch=1, output_ch=1)
+
+y_pred, labels = pred(model, device, test_loader)
+np.save('y_pred.npy', y_pred)
+np.save('labels.npy', labels)
+obs.uploadFile('y_pred.npy', './data/y_pred.npy')
+obs.uploadFile('labels.npy', './data/labels.npy')

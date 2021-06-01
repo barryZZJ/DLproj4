@@ -30,8 +30,8 @@ class DealDataset(Dataset):
         self.obs = obs
         self.loadlist = []# 记录已加载的文件，用于删除
         if read2D_image:
-            self.train_image_path = [os.path.join('data/imagesTr_2d_256', filename) for filename in self.obs.listdir('data/imagesTr_2d_256')]
-            self.train_label_path = [os.path.join('data/labelsTr_2d_256', filename) for filename in os.listdir('data/labelsTr_2d_256') if filename.endswith('.zip')]
+            self.train_image_path = [os.path.join('data/imagesTr_2d_256', filename) for filename in self.obs.listdir('data/imagesTr_2d_256')][:1000]
+            self.train_label_path = [os.path.join('data/labelsTr_2d_256', filename) for filename in os.listdir('data/labelsTr_2d_256') if filename.endswith('.zip')][:1000]
             random.shuffle(self.train_image_path)
             random.shuffle(self.train_label_path)
             divide_point = int(len(self.train_image_path) * 0.8)
