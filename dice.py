@@ -27,3 +27,6 @@ def dice_coef_gpu(output, target):
     return loss.sum() / N
 
 
+class DiceLoss(torch.nn.Module):
+    def forward(self, y_pred, target):
+        return 1-dice_coef_gpu(y_pred, target)

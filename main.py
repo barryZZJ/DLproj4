@@ -155,8 +155,8 @@ def train(model, device, train_loader, optimizer):
     dice_save = 0
     total = 0
 
-    criterion = nn.BCEWithLogitsLoss().to(device)
-    # criterion = DiceLoss().to(device)
+    # criterion = nn.BCEWithLogitsLoss().to(device)
+    criterion = DiceLoss().to(device)
 
     for batch_idx, (x, labels1) in enumerate(train_loader):
         gc.collect()
@@ -198,8 +198,8 @@ def test(model, device, test_loader):
     dice_save = 0
     total = 0
 
-    criterion = nn.BCEWithLogitsLoss().to(device)
-    # criterion = DiceLoss().to(device)
+    # criterion = nn.BCEWithLogitsLoss().to(device)
+    criterion = DiceLoss().to(device)
 
     with torch.no_grad():
         for batch_idx, (x, labels1) in enumerate(test_loader):
