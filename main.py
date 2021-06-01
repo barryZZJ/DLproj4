@@ -36,11 +36,11 @@ def download(use_aug, auglist, extract_labels=True):
     # obs.downloadDir('./data/labelsTr_Cut', './data/labelsTr_Cut')
     #obs.downloadDir('./data/imagesTr_2d', './data/imagesTr_2d')
     if extract_labels:
-        path = './data/labelsTr_2d.zip'
+        path = './data/labelsTr_2d_256.zip'
         obs.downloadFile(path, path)
         zip_file = zipfile.ZipFile(path)
-        zip_file.extractall('./data/labelsTr_2d')
-        print(os.listdir('./data/labelsTr_2d')[:5])
+        zip_file.extractall('./data/labelsTr_2d_256')
+        print(os.listdir('./data/labelsTr_2d_256')[:5])
 
     if use_aug:
         for augmethod in auglist:
@@ -60,6 +60,7 @@ from dataloader import *
 from models import UNet, UNetv2, UNet3d, ResUNet, R2UNet
 
 config = {
+    'model': 'resunet',
     'optimizer': 'adam',
     'sgd':{'lr':0.1,
            'momentum':0.9},
@@ -69,7 +70,7 @@ config = {
             'weight_decay': 0.001,
             'amsgrad': True},
 
-    'batch_size': 8,
+    'batch_size': 32,
     'do_resize': False, # 我们上传的是已经处理好的图片，因此不再使用resize
     'use_aug': False,
     'auglist': ['Lr', 'Ud', 'Rot', 'Turn', 'Shift', 'Zoom', 'Gamma'], # 已经实现的增强方案
@@ -95,7 +96,7 @@ if DEBUG:
     for key,val in config_debug.items():
         config[key]=val
 
-config['tostr'] = lambda : f"opt{config['optimizer']}_{'_'.join(['{}{}'.format(key, val) for key, val in config[config['optimizer']].items()])}_bs{config['batch_size']}" + (f"_aug{''.join(sorted(config['auglist']))}" if config['use_aug'] else '')
+config['tostr'] = lambda : f"{config['model']}_opt{config['optimizer']}_{'_'.join(['{}{}'.format(key, val) for key, val in config[config['optimizer']].items()])}_bs{config['batch_size']}" + (f"_aug{''.join(sorted(config['auglist']))}" if config['use_aug'] else '')
 
 
 #%%
@@ -229,8 +230,12 @@ if __name__ == "__main__":
     # load data
     train_loader, test_loader = load_data(config['batch_size'], config['do_resize'], config['use_aug'], config['auglist'], config['read2D_image'], obs)
 
-    # model = UNet(n_channels=1, n_classes=1, bilinear=False) # TODO bilinear?
-    model = UNetv2(img_ch=1, output_ch=1)
+    if config['model'] == 'resunet':
+        model = ResUNet(1, 1)
+    elif config['model'] == 'unet':
+        model = UNet(n_channels=1, n_classes=1, bilinear=False) # TODO bilinear?
+    elif config['model'] == 'unetv2':
+        model = UNetv2(img_ch=1, output_ch=1)
 
     if config['optimizer'] == 'sgd':
         optimizer = torch.optim.SGD(model.parameters(), **config['sgd'])
@@ -267,6 +272,7 @@ if __name__ == "__main__":
             test_dices = []
 
 #%%
+
 # device
 device = config['device']
 # load data

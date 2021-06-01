@@ -37,17 +37,17 @@ class Upsample(nn.Module):
 
 
 class ResUNet(nn.Module):
-    def __init__(self, channel):
+    def __init__(self, in_ch, out_ch):
         super(ResUNet, self).__init__()
 
         self.input_layer = nn.Sequential(
-            nn.Conv2d(channel, 64, kernel_size=3, padding=1),
+            nn.Conv2d(in_ch, 64, kernel_size=3, padding=1),
             nn.BatchNorm2d(64),
             nn.ReLU(),
             nn.Conv2d(64, 64, kernel_size=3, padding=1),
         )
         self.input_skip = nn.Sequential(
-            nn.Conv2d(channel, 64, kernel_size=3, padding=1)
+            nn.Conv2d(in_ch, 64, kernel_size=3, padding=1)
         )
 
         self.residual_conv_1 = ResidualConv(64, 128, stride=2, padding=1)
@@ -65,7 +65,7 @@ class ResUNet(nn.Module):
         self.up_residual_conv3 = ResidualConv(128 + 64, 64, stride=1, padding=1)
 
         self.output_layer = nn.Sequential(
-            nn.Conv2d(64, 1, 1, 1),
+            nn.Conv2d(64, out_ch, 1, 1),
             nn.Sigmoid(),
         )
 
