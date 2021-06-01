@@ -116,7 +116,6 @@ class DealDataset(Dataset):
 def extract(filepath):
     zip_file = zipfile.ZipFile(filepath)
     zip_file.extractall(os.path.dirname(filepath))
-    print('extract', filepath)
 
 def resize(img_path, label_path):
     expand_slice = 0  # 轴向外侧扩张的slice数量
