@@ -6,9 +6,11 @@
 #%%
 
 from obsmanip import OBS
-bucket_name = 'zzjmnist'
-base_path = 'DLproj4'
-obs = OBS(bucket_name, base_path)
+bucket_name = 'cqu-hjk'
+base_path = 'project'
+ak = 'TNVDWHXLWJ1W6KH77ERK'
+sk = 'E6P2vThCvdabYxY1DNzYOKYcooqGq1XWUpdjJey8'
+obs = OBS(bucket_name, base_path, ak, sk)
 
 #%%
 
@@ -17,9 +19,8 @@ for filename in pyfiles:
     obs.downloadFile(filename, filename)
 
 #%%
+
 import zipfile
-import sys
-import time
 
 def mkdir(path):
     if not os.path.exists(path):
