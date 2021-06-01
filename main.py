@@ -34,7 +34,7 @@ def download(use_aug, auglist, extract_labels=True):
     mkdir('./data')
     # obs.downloadDir('./data/imagesTr_Cut', './data/imagesTr_Cut')
     # obs.downloadDir('./data/labelsTr_Cut', './data/labelsTr_Cut')
-    obs.downloadDir('./data/imagesTr_2d', './data/imagesTr_2d')
+    #obs.downloadDir('./data/imagesTr_2d', './data/imagesTr_2d')
     if extract_labels:
         path = './data/labelsTr_2d.zip'
         obs.downloadFile(path, path)
@@ -184,7 +184,7 @@ def pred(model, device, test_loader):
     model.to(device)
     model.eval()
     with torch.no_grad():
-        batch_idx, (x, labels) = next(test_loader)
+        x, labels = next(iter(test_loader))
         x, labels = x.to(device), labels.to(device)
         y_pred = model(x)
     return y_pred

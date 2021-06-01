@@ -3,6 +3,7 @@ import random
 
 import nibabel as nib
 import numpy as np
+import torch.nn.functional
 from nibabel.viewers import OrthoSlicer3D
 from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
@@ -30,7 +31,7 @@ class DealDataset(Dataset):
         self.loadlist = []# 记录已加载的文件，用于删除
         if read2D_image:
             self.train_image_path = [os.path.join('data/imagesTr_2d', filename) for filename in self.obs.listdir('data/imagesTr_2d')]
-            self.train_label_path = [os.path.join('data/labelsTr_2d', filename) for filename in os.listdir('data/labelsTr_2d')]
+            self.train_label_path = [os.path.join('data/labelsTr_2d', filename) for filename in os.listdir('data/labelsTr_2d') if filename.endswith('.zip')]
             random.shuffle(self.train_image_path)
             random.shuffle(self.train_label_path)
             divide_point = int(len(self.train_image_path) * 0.8)
@@ -82,7 +83,7 @@ class DealDataset(Dataset):
         if self.read2D_image:
             if not os.path.exists(img_path):
                 self.obs.downloadFile(img_path, img_path, quiet=True)
-            img = np.load(img_path) # type:
+            img = np.load(img_path)
             if label_path.endswith('.zip'):
                 extract(label_path)
                 label = np.load(label_path.replace('.zip','.npy'))
@@ -97,6 +98,7 @@ class DealDataset(Dataset):
 
         if self.transform is not None:
             img = self.transform(img)
+            img = torch.nn.functional.sigmoid(img) # 归一化
             label = self.transform(label)
 
             if not self.read2D_image:
