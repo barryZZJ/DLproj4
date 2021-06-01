@@ -17,12 +17,14 @@ class OBS:
         def close(self):
             self.__file.close()
 
-    def __init__(self, bucket_name, base_path='/'):
+    def __init__(self, bucket_name, base_path='/', ak=None, sk=None):
         self.bucket_name = bucket_name
         self.base_path = self.rmrt(base_path)
         self.cwd = self.base_path # always abspath without s3://bucket_name/
         self.getcwd()
         self.open = lambda filename, mode: self.ContextMnger(self, filename, mode)
+        if ak is not None and sk is not None:
+            mox.file.set_auth(ak=ak, sk=sk)
 
     def rmrt(self, path):
         if path.startswith('/'):
@@ -71,14 +73,15 @@ class OBS:
         self.cwd = path
         self.getcwd()
 
-    def downloadFile(self, obsfilename, localfilename):
+    def downloadFile(self, obsfilename, localfilename, quiet=False):
         obsfilename = self.abspath(obsfilename)
         if not self.exists(obsfilename):
             obsfilename = self.pre(obsfilename)
             print(obsfilename, 'dose not exists!')
             return
         obsfilename = self.pre(obsfilename)
-        print('download from ', obsfilename)
+        if not quiet:
+            print('download from ', obsfilename)
         mox.file.copy(obsfilename, localfilename)
 
     def uploadFile(self, localfilename, obsfilename):

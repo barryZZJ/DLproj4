@@ -3,12 +3,14 @@ import random
 
 import nibabel as nib
 import numpy as np
+import torch.nn.functional
 from nibabel.viewers import OrthoSlicer3D
 from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
 from scipy import ndimage
 import SimpleITK as sitk
 import zipfile
+from obsmanip import OBS
 
 # matplotlib.use('TkAgg')
 
@@ -18,17 +20,18 @@ class DealDataset(Dataset):
         读取数据、初始化数据
     """
 
-    def __init__(self, type, transform=None, do_resize=False, use_aug=True, auglist=['Lr', 'Ud'], read2D_image=True):
+    def __init__(self, type, transform=None, do_resize=False, use_aug=True, auglist=['Lr', 'Ud'], read2D_image=True, obs:OBS=None):
         self.do_resize = do_resize
         self.use_aug = use_aug
         self.auglist = auglist
         self.transform = transform
         self.read2D_image = read2D_image
         self.index_list = list(map(str, [index for index in range(0, 130)]))
-        
+        self.obs = obs
+        self.loadlist = []# 记录已加载的文件，用于删除
         if read2D_image:
-            self.train_image_path = [os.path.join('data/imagesTr_2d', filename) for filename in os.listdir('data/imagesTr_2d')]
-            self.train_label_path = [os.path.join('data/labelsTr_2d', filename) for filename in os.listdir('data/labelsTr_2d')]
+            self.train_image_path = [os.path.join('data/imagesTr_2d', filename) for filename in self.obs.listdir('data/imagesTr_2d')]
+            self.train_label_path = [os.path.join('data/labelsTr_2d', filename) for filename in os.listdir('data/labelsTr_2d') if filename.endswith('.zip')]
             random.shuffle(self.train_image_path)
             random.shuffle(self.train_label_path)
             divide_point = int(len(self.train_image_path) * 0.8)
@@ -75,9 +78,12 @@ class DealDataset(Dataset):
     def __getitem__(self, index):
         img_path = self.train_path[index]["image"]
         label_path = self.train_path[index]["label"]
+        self.loadlist.append(index)
 
         if self.read2D_image:
-            img = np.load(img_path) # type:
+            if not os.path.exists(img_path):
+                self.obs.downloadFile(img_path, img_path, quiet=True)
+            img = np.load(img_path)
             if label_path.endswith('.zip'):
                 extract(label_path)
                 label = np.load(label_path.replace('.zip','.npy'))
@@ -92,6 +98,8 @@ class DealDataset(Dataset):
 
         if self.transform is not None:
             img = self.transform(img)
+            img = torch.sigmoid(img) # 归一化
+
             label = self.transform(label)
 
             if not self.read2D_image:
@@ -106,9 +114,11 @@ class DealDataset(Dataset):
 
         return img, label  # 1 * 128 * 64 * 64
 
-    def __delitem__(self, index):
-        print('remove', self.train_path[index]['label'].replace('.zip','.npy'))
-        os.remove(self.train_path[index]['label'].replace('.zip','.npy'))
+    def removenpy(self):
+        for index in self.loadlist:
+            os.remove(self.train_path[index]['label'].replace('.zip','.npy'))
+            os.remove(self.train_path[index]['image'])
+        self.loadlist = []
 
     def __len__(self):
         return len(self.train_path)
@@ -116,7 +126,6 @@ class DealDataset(Dataset):
 def extract(filepath):
     zip_file = zipfile.ZipFile(filepath)
     zip_file.extractall(os.path.dirname(filepath))
-    print('extract', filepath)
 
 def resize(img_path, label_path):
     expand_slice = 0  # 轴向外侧扩张的slice数量
@@ -178,14 +187,14 @@ def resize(img_path, label_path):
     return img_array, label_array
 
 
-def load_data(batch_size=8, do_resize=False, use_aug=True, auglist=['Lr', 'Ud'], read2D_image=True):
+def load_data(batch_size=8, do_resize=False, use_aug=True, auglist=['Lr', 'Ud'], read2D_image=True, obs=None):
     random.seed(0)
     train_dataset = DealDataset("train", transform=transforms.ToTensor(), do_resize=do_resize,
                                 use_aug=use_aug, auglist=auglist,
-                                read2D_image=read2D_image)
+                                read2D_image=read2D_image, obs=obs)
     test_dataset = DealDataset("test", transform=transforms.ToTensor(), do_resize=do_resize,
                                use_aug=use_aug, auglist=auglist,
-                               read2D_image=read2D_image)
+                               read2D_image=read2D_image, obs=obs)
     # 载入数据集
     train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=True)

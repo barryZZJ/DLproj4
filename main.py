@@ -6,20 +6,22 @@
 #%%
 
 from obsmanip import OBS
-bucket_name = 'zzjmnist'
-base_path = 'DLproj4'
-obs = OBS(bucket_name, base_path)
+bucket_name = 'cqu-hjk'
+base_path = 'project'
+ak = 'TNVDWHXLWJ1W6KH77ERK'
+sk = 'E6P2vThCvdabYxY1DNzYOKYcooqGq1XWUpdjJey8'
+obs = OBS(bucket_name, base_path, ak, sk)
 
 #%%
 
 pyfiles = [filename for filename in obs.listdir('.') if filename.endswith('.py')]
 for filename in pyfiles:
     obs.downloadFile(filename, filename)
+obs.downloadDir('./models', './models')
 
 #%%
+
 import zipfile
-import sys
-import time
 
 def mkdir(path):
     if not os.path.exists(path):
@@ -32,7 +34,7 @@ def download(use_aug, auglist, extract_labels=True):
     mkdir('./data')
     # obs.downloadDir('./data/imagesTr_Cut', './data/imagesTr_Cut')
     # obs.downloadDir('./data/labelsTr_Cut', './data/labelsTr_Cut')
-    obs.downloadDir('./data/imagesTr_2d', './data/imagesTr_2d')
+    #obs.downloadDir('./data/imagesTr_2d', './data/imagesTr_2d')
     if extract_labels:
         path = './data/labelsTr_2d.zip'
         obs.downloadFile(path, path)
@@ -170,7 +172,7 @@ def train(model, device, train_loader, optimizer):
         optimizer.step()
         optimizer.zero_grad()
         torch.cuda.empty_cache()
-        del labels1 # 删除对应npy文件，下次使用时再解压
+        train_loader.dataset.removenpy()# 删除对应npy文件，下次使用时再下载、解压
 
     gc.collect()
 
@@ -182,7 +184,7 @@ def pred(model, device, test_loader):
     model.to(device)
     model.eval()
     with torch.no_grad():
-        batch_idx, (x, labels) = next(test_loader)
+        x, labels = next(iter(test_loader))
         x, labels = x.to(device), labels.to(device)
         y_pred = model(x)
     return y_pred
@@ -210,7 +212,7 @@ def test(model, device, test_loader):
 
             dice_save += dice_coef(y_pred, labels)
             torch.cuda.empty_cache()
-            del labels1 # 删除对应npy文件，下次使用时再解压
+            train_loader.dataset.removenpy()# 删除对应npy文件，下次使用时再下载、解压
 
     gc.collect()
 
@@ -225,7 +227,7 @@ if __name__ == "__main__":
     # device
     device = config['device']
     # load data
-    train_loader, test_loader = load_data(config['batch_size'], config['do_resize'], config['use_aug'], config['auglist'], config['read2D_image'])
+    train_loader, test_loader = load_data(config['batch_size'], config['do_resize'], config['use_aug'], config['auglist'], config['read2D_image'], obs)
 
     # model = UNet(n_channels=1, n_classes=1, bilinear=False) # TODO bilinear?
     model = UNetv2(img_ch=1, output_ch=1)
@@ -263,3 +265,13 @@ if __name__ == "__main__":
             save_loss('test_dice', test_dices, config['save_dir'], obs)
             test_losses = []
             test_dices = []
+
+#%%
+# device
+device = config['device']
+# load data
+train_loader, test_loader = load_data(config['batch_size'], config['do_resize'], config['use_aug'], config['auglist'], config['read2D_image'], obs)
+
+# model = UNet(n_channels=1, n_classes=1, bilinear=False) # TODO bilinear?
+model = UNetv2(img_ch=1, output_ch=1)
+pred(model, device, test_loader)
