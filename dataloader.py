@@ -98,7 +98,8 @@ class DealDataset(Dataset):
 
         if self.transform is not None:
             img = self.transform(img)
-            img = torch.nn.functional.sigmoid(img) # 归一化
+            img = torch.sigmoid(img) # 归一化
+            print(img)
             label = self.transform(label)
 
             if not self.read2D_image:
