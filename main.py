@@ -36,11 +36,11 @@ def download(use_aug, auglist, extract_labels=True):
     # obs.downloadDir('./data/labelsTr_Cut', './data/labelsTr_Cut')
     #obs.downloadDir('./data/imagesTr_2d', './data/imagesTr_2d')
     if extract_labels:
-        path = './data/labelsTr_2d.zip'
+        path = './data/labelsTr_2d_256.zip'
         obs.downloadFile(path, path)
         zip_file = zipfile.ZipFile(path)
-        zip_file.extractall('./data/labelsTr_2d')
-        print(os.listdir('./data/labelsTr_2d')[:5])
+        zip_file.extractall('./data/labelsTr_2d_256')
+        print(os.listdir('./data/labelsTr_2d_256')[:5])
 
     if use_aug:
         for augmethod in auglist:
@@ -267,6 +267,7 @@ if __name__ == "__main__":
             test_dices = []
 
 #%%
+
 # device
 device = config['device']
 # load data
