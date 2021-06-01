@@ -17,6 +17,7 @@ obs = OBS(bucket_name, base_path, ak, sk)
 pyfiles = [filename for filename in obs.listdir('.') if filename.endswith('.py')]
 for filename in pyfiles:
     obs.downloadFile(filename, filename)
+obs.downloadDir('./models', './models')
 
 #%%
 
