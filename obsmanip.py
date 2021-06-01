@@ -73,14 +73,15 @@ class OBS:
         self.cwd = path
         self.getcwd()
 
-    def downloadFile(self, obsfilename, localfilename):
+    def downloadFile(self, obsfilename, localfilename, quiet=False):
         obsfilename = self.abspath(obsfilename)
         if not self.exists(obsfilename):
             obsfilename = self.pre(obsfilename)
             print(obsfilename, 'dose not exists!')
             return
         obsfilename = self.pre(obsfilename)
-        print('download from ', obsfilename)
+        if not quiet:
+            print('download from ', obsfilename)
         mox.file.copy(obsfilename, localfilename)
 
     def uploadFile(self, localfilename, obsfilename):

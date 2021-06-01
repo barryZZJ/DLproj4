@@ -172,7 +172,7 @@ def train(model, device, train_loader, optimizer):
         optimizer.step()
         optimizer.zero_grad()
         torch.cuda.empty_cache()
-        del labels1 # 删除对应npy文件，下次使用时再解压
+        train_loader.dataset.removenpy()# 删除对应npy文件，下次使用时再下载、解压
 
     gc.collect()
 
@@ -212,7 +212,7 @@ def test(model, device, test_loader):
 
             dice_save += dice_coef(y_pred, labels)
             torch.cuda.empty_cache()
-            del labels1 # 删除对应npy文件，下次使用时再解压
+            train_loader.dataset.removenpy()# 删除对应npy文件，下次使用时再下载、解压
 
     gc.collect()
 
@@ -227,7 +227,7 @@ if __name__ == "__main__":
     # device
     device = config['device']
     # load data
-    train_loader, test_loader = load_data(config['batch_size'], config['do_resize'], config['use_aug'], config['auglist'], config['read2D_image'])
+    train_loader, test_loader = load_data(config['batch_size'], config['do_resize'], config['use_aug'], config['auglist'], config['read2D_image'], obs)
 
     # model = UNet(n_channels=1, n_classes=1, bilinear=False) # TODO bilinear?
     model = UNetv2(img_ch=1, output_ch=1)
