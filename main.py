@@ -265,3 +265,13 @@ if __name__ == "__main__":
             save_loss('test_dice', test_dices, config['save_dir'], obs)
             test_losses = []
             test_dices = []
+
+#%%
+# device
+device = config['device']
+# load data
+train_loader, test_loader = load_data(config['batch_size'], config['do_resize'], config['use_aug'], config['auglist'], config['read2D_image'], obs)
+
+# model = UNet(n_channels=1, n_classes=1, bilinear=False) # TODO bilinear?
+model = UNetv2(img_ch=1, output_ch=1)
+pred(model, device, test_loader)
