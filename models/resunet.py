@@ -93,5 +93,7 @@ class ResUNet(nn.Module):
         x10 = self.up_residual_conv3(x9)
 
         output = self.output_layer(x10)
+        output[output<0.5] = 0
+        output[output>=0.5] = 1
 
         return output
