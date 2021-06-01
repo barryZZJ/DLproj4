@@ -70,7 +70,11 @@ class OutConv(nn.Module):
         self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=1)
 
     def forward(self, x):
-        return self.conv(x)
+        x = self.conv(x)
+        x = torch.sigmoid(x)
+        x[x<0.5] = 0
+        x[x>=0.5] = 1
+        return x
 
 
 """ Full assembly of the parts to form the complete network """

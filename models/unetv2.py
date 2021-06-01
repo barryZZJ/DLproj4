@@ -133,6 +133,9 @@ class UNet(nn.Module):
 
         d1 = self.Conv_1x1(d2)
 
+        d1 = torch.sigmoid(d1)
+        d1[d1<0.5] = 0
+        d1[d1>=0.5] = 1
         return d1
 
 # RNN + ResUNet
@@ -201,6 +204,7 @@ class R2UNet(nn.Module):
         d2 = self.Up_RRCNN2(d2)
 
         d1 = self.Conv_1x1(d2)
+        d1 = torch.sigmoid(d1)
 
         return d1
 
