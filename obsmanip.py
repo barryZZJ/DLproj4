@@ -17,12 +17,14 @@ class OBS:
         def close(self):
             self.__file.close()
 
-    def __init__(self, bucket_name, base_path='/'):
+    def __init__(self, bucket_name, base_path='/', ak=None, sk=None):
         self.bucket_name = bucket_name
         self.base_path = self.rmrt(base_path)
         self.cwd = self.base_path # always abspath without s3://bucket_name/
         self.getcwd()
         self.open = lambda filename, mode: self.ContextMnger(self, filename, mode)
+        if ak is not None and sk is not None:
+            mox.file.set_auth(ak=ak, sk=sk)
 
     def rmrt(self, path):
         if path.startswith('/'):
